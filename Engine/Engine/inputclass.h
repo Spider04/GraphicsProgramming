@@ -19,4 +19,4 @@ private:
 	bool m_keys[256];
 };
 
-#endif //_INPUTCLASS_H_
+#endif

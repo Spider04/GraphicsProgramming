@@ -41,4 +41,4 @@ static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 //global pointer to class is necessary, to handle messages from Windows via the classes functions
 static SystemClass* ApplicationHandle = 0;
 
-#endif //_SYSTEMCLASS_H_
+#endif

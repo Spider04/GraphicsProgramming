@@ -2,10 +2,10 @@
 #define _D3DCLASS_H_
 
 //link specific libraries from DirectX for various functionalities
-#pragma comment(lib, "dxgi.lib");
-#pragma comment(lib, "d3d11.lib");
-#pragma comment(lib, "d3dx11.lib");
-#pragma comment(lib, "d3dx10.lib");
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "d3dx11.lib")
+#pragma comment(lib, "d3dx10.lib")
 
 #include <DXGI.h>
 #include <D3Dcommon.h>
