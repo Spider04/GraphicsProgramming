@@ -1,13 +1,31 @@
+////////////////////////////////////////////////////////////////////////////////
+// Filename: systemclass.h
+////////////////////////////////////////////////////////////////////////////////
 #ifndef _SYSTEMCLASS_H_
 #define _SYSTEMCLASS_H_
 
 
+///////////////////////////////
+// PRE-PROCESSING DIRECTIVES //
+///////////////////////////////
 #define WIN32_LEAN_AND_MEAN
 
-#include <Windows.h>
-#include "inputclass.h"
-#include "graphicsclass.h"
 
+//////////////
+// INCLUDES //
+//////////////
+#include <windows.h>
+
+
+///////////////////////
+// MY CLASS INCLUDES //
+///////////////////////
+#include "applicationclass.h"
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Class name: SystemClass
+////////////////////////////////////////////////////////////////////////////////
 class SystemClass
 {
 public:
@@ -16,8 +34,8 @@ public:
 	~SystemClass();
 
 	bool Initialize();
-	void Run();
 	void Shutdown();
+	void Run();
 
 	LRESULT CALLBACK MessageHandler(HWND, UINT, WPARAM, LPARAM);
 
@@ -26,19 +44,24 @@ private:
 	void InitializeWindows(int&, int&);
 	void ShutdownWindows();
 
-	//member variables
+private:
 	LPCWSTR m_applicationName;
 	HINSTANCE m_hinstance;
 	HWND m_hwnd;
-
-	InputClass* m_Input;
-	GraphicsClass* m_Graphics;
+	ApplicationClass* m_Application;
 };
 
-//function prototypes
+
+/////////////////////////
+// FUNCTION PROTOTYPES //
+/////////////////////////
 static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
-//global pointer to class is necessary, to handle messages from Windows via the classes functions
+
+/////////////
+// GLOBALS //
+/////////////
 static SystemClass* ApplicationHandle = 0;
+
 
 #endif

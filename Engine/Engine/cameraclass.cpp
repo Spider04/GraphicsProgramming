@@ -1,18 +1,30 @@
+////////////////////////////////////////////////////////////////////////////////
+// Filename: cameraclass.cpp
+////////////////////////////////////////////////////////////////////////////////
 #include "cameraclass.h"
 
+
 CameraClass::CameraClass()
-	: m_positionX(0.0f)
-	, m_positionY(0.0f)
-	, m_positionZ(0.0f)
-	, m_rotationX(0.0f)
-	, m_rotationY(0.0f)
-	, m_rotationZ(0.0f)
-{}
+{
+	m_positionX = 0.0f;
+	m_positionY = 0.0f;
+	m_positionZ = 0.0f;
+
+	m_rotationX = 0.0f;
+	m_rotationY = 0.0f;
+	m_rotationZ = 0.0f;
+}
+
+
 CameraClass::CameraClass(const CameraClass& other)
-{}
+{
+}
+
 
 CameraClass::~CameraClass()
-{}
+{
+}
+
 
 void CameraClass::SetPosition(float x, float y, float z)
 {
@@ -21,6 +33,8 @@ void CameraClass::SetPosition(float x, float y, float z)
 	m_positionZ = z;
 	return;
 }
+
+
 void CameraClass::SetRotation(float x, float y, float z)
 {
 	m_rotationX = x;
@@ -29,16 +43,19 @@ void CameraClass::SetRotation(float x, float y, float z)
 	return;
 }
 
+
 D3DXVECTOR3 CameraClass::GetPosition()
 {
 	return D3DXVECTOR3(m_positionX, m_positionY, m_positionZ);
 }
+
+
 D3DXVECTOR3 CameraClass::GetRotation()
 {
 	return D3DXVECTOR3(m_rotationX, m_rotationY, m_rotationZ);
 }
 
-//build and update view matrix
+
 void CameraClass::Render()
 {
 	//creat upwards vector
@@ -46,13 +63,13 @@ void CameraClass::Render()
 	up.x = 0.0f;
 	up.y = 1.0f;
 	up.z = 0.0f;
-
+	
 	//set position
 	D3DXVECTOR3 position;
 	position.x = m_positionX;
 	position.y = m_positionY;
 	position.z = m_positionZ;
-
+	
 	//set default looking direction
 	D3DXVECTOR3 lookAt;
 	lookAt.x = 0.0f;
@@ -62,8 +79,8 @@ void CameraClass::Render()
 	//set rotation in radians
 	float pitch, yaw, roll;
 	pitch = m_rotationX * 0.0174532925f; //x axis
-	yaw = m_rotationX * 0.0174532925f; //y axis
-	roll = m_rotationX * 0.0174532925f; //z axis
+	yaw	= m_rotationY * 0.0174532925f; //y axis
+	roll = m_rotationZ * 0.0174532925f; //z axis
 
 	//create roation matrix
 	D3DXMATRIX rotationMatrix;
@@ -81,6 +98,7 @@ void CameraClass::Render()
 
 	return;
 }
+
 
 void CameraClass::GetViewMatrix(D3DXMATRIX& viewMatrix)
 {
