@@ -1,14 +1,10 @@
-////////////////////////////////////////////////////////////////////////////////
-// Filename: terrainclass.cpp
-////////////////////////////////////////////////////////////////////////////////
 #include "terrainclass.h"
 
 
 TerrainClass::TerrainClass()
-	: m_vertexBuffer(0)
-	, m_indexBuffer(0)
-	, m_heightMap(0)
+	: m_heightMap(0)
 	, m_Texture(0)
+	, m_vertices(0)
 {}
 TerrainClass::TerrainClass(const TerrainClass& other)
 {}
@@ -38,7 +34,7 @@ bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename, WCH
 	if(!result)
 		return false;
 
-	// Initialize the vertex and index buffer that hold the geometry for the terrain.
+	// Initialize vertex array that will hold the geometry
 	result = InitializeBuffers(device);
 	return result;
 }
@@ -48,7 +44,7 @@ void TerrainClass::Shutdown()
 	//release texture
 	ReleaseTexture();
 
-	// Release the vertex and index buffer.
+	// Release vertex array
 	ShutdownBuffers();
 
 	//release height map
@@ -57,23 +53,20 @@ void TerrainClass::Shutdown()
 	return;
 }
 
-void TerrainClass::Render(ID3D11DeviceContext* deviceContext)
-{
-	// Put the vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	RenderBuffers(deviceContext);
-
-	return;
-}
-
-
-int TerrainClass::GetIndexCount()
-{
-	return m_indexCount;
-}
 
 ID3D11ShaderResourceView* TerrainClass::GetTexture()
 {
 	return m_Texture->GetTexture();
+}
+
+int TerrainClass::GetVertexCount()
+{
+	return m_vertexCount;
+}
+
+void TerrainClass::CopyVertexArray(void* vertexList)
+{
+	memcpy(vertexList, m_vertices, sizeof(VertexType) * m_vertexCount);
 }
 
 
@@ -406,19 +399,10 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 	// Calculate the number of vertices in the terrain mesh.
 	m_vertexCount = (m_terrainWidth - 1) * (m_terrainHeight - 1) * 6;
 
-	// Set the index count to the same as the vertex count.
-	m_indexCount = m_vertexCount;
-
 	// Create the vertex array.
 	VertexType* vertices;
 	vertices = new VertexType[m_vertexCount];
 	if(!vertices)
-		return false;
-
-	// Create the index array.
-	unsigned long* indices;
-	indices = new unsigned long[m_indexCount];
-	if(!indices)
 		return false;
 
 	// Initialize the index to the vertex array.
@@ -443,10 +427,9 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 			if(tv == 1.0f)
 				tv = 0.0f;
 
-			vertices[index].position = D3DXVECTOR3(m_heightMap[index3].x, m_heightMap[index3].y, m_heightMap[index3].z);
-			vertices[index].texture = D3DXVECTOR2(m_heightMap[index3].tu, tv);
-			vertices[index].normal = D3DXVECTOR3(m_heightMap[index3].nx, m_heightMap[index3].ny, m_heightMap[index3].nz);
-			indices[index] = index;
+			m_vertices[index].position = D3DXVECTOR3(m_heightMap[index3].x, m_heightMap[index3].y, m_heightMap[index3].z);
+			m_vertices[index].texture = D3DXVECTOR2(m_heightMap[index3].tu, tv);
+			m_vertices[index].normal = D3DXVECTOR3(m_heightMap[index3].nx, m_heightMap[index3].ny, m_heightMap[index3].nz);
 			index++;
 
 			// Upper right.
@@ -460,24 +443,21 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 			if(tv == 1.0f)
 				tv = 0.0f;
 
-			vertices[index].position = D3DXVECTOR3(m_heightMap[index4].x, m_heightMap[index4].y, m_heightMap[index4].z);
-			vertices[index].texture = D3DXVECTOR2(tu, tv);
-			vertices[index].normal = D3DXVECTOR3(m_heightMap[index4].nx, m_heightMap[index4].ny, m_heightMap[index4].nz);
-			indices[index] = index;
+			m_vertices[index].position = D3DXVECTOR3(m_heightMap[index4].x, m_heightMap[index4].y, m_heightMap[index4].z);
+			m_vertices[index].texture = D3DXVECTOR2(tu, tv);
+			m_vertices[index].normal = D3DXVECTOR3(m_heightMap[index4].nx, m_heightMap[index4].ny, m_heightMap[index4].nz);
 			index++;
 
 			// Bottom left.
-			vertices[index].position = D3DXVECTOR3(m_heightMap[index1].x, m_heightMap[index1].y, m_heightMap[index1].z);
-			vertices[index].texture = D3DXVECTOR2(m_heightMap[index1].tu, m_heightMap[index1].tv);
-			vertices[index].normal = D3DXVECTOR3(m_heightMap[index1].nx, m_heightMap[index1].ny, m_heightMap[index1].nz);
-			indices[index] = index;
+			m_vertices[index].position = D3DXVECTOR3(m_heightMap[index1].x, m_heightMap[index1].y, m_heightMap[index1].z);
+			m_vertices[index].texture = D3DXVECTOR2(m_heightMap[index1].tu, m_heightMap[index1].tv);
+			m_vertices[index].normal = D3DXVECTOR3(m_heightMap[index1].nx, m_heightMap[index1].ny, m_heightMap[index1].nz);
 			index++;
 
 			// Bottom left.
-			vertices[index].position = D3DXVECTOR3(m_heightMap[index1].x, m_heightMap[index1].y, m_heightMap[index1].z);
-			vertices[index].texture = D3DXVECTOR2(m_heightMap[index1].tu, m_heightMap[index1].tv);
-			vertices[index].normal = D3DXVECTOR3(m_heightMap[index1].nx, m_heightMap[index1].ny, m_heightMap[index1].nz);
-			indices[index] = index;
+			m_vertices[index].position = D3DXVECTOR3(m_heightMap[index1].x, m_heightMap[index1].y, m_heightMap[index1].z);
+			m_vertices[index].texture = D3DXVECTOR2(m_heightMap[index1].tu, m_heightMap[index1].tv);
+			m_vertices[index].normal = D3DXVECTOR3(m_heightMap[index1].nx, m_heightMap[index1].ny, m_heightMap[index1].nz);
 			index++;
 
 			// Upper right.
@@ -491,10 +471,9 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 			if(tv == 1.0f)
 				tv = 0.0f;
 
-			vertices[index].position = D3DXVECTOR3(m_heightMap[index4].x, m_heightMap[index4].y, m_heightMap[index4].z);
-			vertices[index].texture = D3DXVECTOR2(tu, tv);
-			vertices[index].normal = D3DXVECTOR3(m_heightMap[index4].nx, m_heightMap[index4].ny, m_heightMap[index4].nz);
-			indices[index] = index;
+			m_vertices[index].position = D3DXVECTOR3(m_heightMap[index4].x, m_heightMap[index4].y, m_heightMap[index4].z);
+			m_vertices[index].texture = D3DXVECTOR2(tu, tv);
+			m_vertices[index].normal = D3DXVECTOR3(m_heightMap[index4].nx, m_heightMap[index4].ny, m_heightMap[index4].nz);
 			index++;
 
 			// Bottom right.
@@ -504,62 +483,12 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 			if(tu == 0.0f)
 				tu = 1.0f;
 
-			vertices[index].position = D3DXVECTOR3(m_heightMap[index2].x, m_heightMap[index2].y, m_heightMap[index2].z);
-			vertices[index].texture = D3DXVECTOR2(tu, m_heightMap[index2].tv);
-			vertices[index].normal = D3DXVECTOR3(m_heightMap[index2].nx, m_heightMap[index2].ny, m_heightMap[index2].nz);
-			indices[index] = index;
+			m_vertices[index].position = D3DXVECTOR3(m_heightMap[index2].x, m_heightMap[index2].y, m_heightMap[index2].z);
+			m_vertices[index].texture = D3DXVECTOR2(tu, m_heightMap[index2].tv);
+			m_vertices[index].normal = D3DXVECTOR3(m_heightMap[index2].nx, m_heightMap[index2].ny, m_heightMap[index2].nz);
 			index++;
 		}
 	}
-
-	// Set up the description of the static vertex buffer.
-	D3D11_BUFFER_DESC vertexBufferDesc;
-    vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.ByteWidth = sizeof(VertexType) * m_vertexCount;
-    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vertexBufferDesc.CPUAccessFlags = 0;
-    vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
-
-	// Give the subresource structure a pointer to the vertex data.
-	D3D11_SUBRESOURCE_DATA vertexData;
-    vertexData.pSysMem = vertices;
-	vertexData.SysMemPitch = 0;
-	vertexData.SysMemSlicePitch = 0;
-
-	// Now create the vertex buffer.
-	HRESULT result;
-    result = device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer);
-	if(FAILED(result))
-		return false;
-
-
-	// Set up the description of the static index buffer.
-	D3D11_BUFFER_DESC indexBufferDesc;
-    indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    indexBufferDesc.ByteWidth = sizeof(unsigned long) * m_indexCount;
-    indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    indexBufferDesc.CPUAccessFlags = 0;
-    indexBufferDesc.MiscFlags = 0;
-	indexBufferDesc.StructureByteStride = 0;
-
-	// Give the subresource structure a pointer to the index data.
-	D3D11_SUBRESOURCE_DATA indexData;
-    indexData.pSysMem = indices;
-	indexData.SysMemPitch = 0;
-	indexData.SysMemSlicePitch = 0;
-
-	// Create the index buffer.
-	result = device->CreateBuffer(&indexBufferDesc, &indexData, &m_indexBuffer);
-	if(FAILED(result))
-		return false;
-
-	// Release the arrays now that the buffers have been created and loaded.
-	delete [] vertices;
-	vertices = 0;
-
-	delete [] indices;
-	indices = 0;
 
 	return true;
 }
@@ -567,39 +496,11 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 void TerrainClass::ShutdownBuffers()
 {
 	// Release the index buffer.
-	if(m_indexBuffer)
+	if(m_vertices)
 	{
-		m_indexBuffer->Release();
-		m_indexBuffer = 0;
+		delete [] m_vertices;
+		m_vertices = 0;
 	}
-
-	// Release the vertex buffer.
-	if(m_vertexBuffer)
-	{
-		m_vertexBuffer->Release();
-		m_vertexBuffer = 0;
-	}
-
-	return;
-}
-
-void TerrainClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
-{
-	// Set vertex buffer stride and offset.
-	unsigned int stride;
-	stride = sizeof(VertexType);
-
-	unsigned int offset;
-	offset = 0;
-    
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);
-
-    // Set the index buffer to active in the input assembler so it can be rendered.
-	deviceContext->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-    // Set the type of primitive that should be rendered from this vertex buffer, in this case a line list.
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	return;
 }

@@ -14,6 +14,7 @@ TerrainShaderClass::TerrainShaderClass(const TerrainShaderClass& other)
 TerrainShaderClass::~TerrainShaderClass()
 {}
 
+
 bool TerrainShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
@@ -26,19 +27,6 @@ void TerrainShaderClass::Shutdown()
 	ShutdownShader();
 	return;
 }
-
-bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix,
-	D3DXVECTOR4 ambientColor, D3DXVECTOR4 diffuseColor, D3DXVECTOR3 lightDirection, ID3D11ShaderResourceView* texture)
-{
-	bool result;
-	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, ambientColor, diffuseColor, lightDirection, texture);
-	if(!result)
-		return false;
-
-	RenderShader(deviceContext, indexCount);
-	return true;
-}
-
 
 bool TerrainShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
 {
@@ -232,6 +220,7 @@ void TerrainShaderClass::ShutdownShader()
 
 	return;
 }
+
 
 void TerrainShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename)
 {

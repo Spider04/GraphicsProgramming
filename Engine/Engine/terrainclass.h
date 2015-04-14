@@ -19,10 +19,10 @@ public:
 
 	bool Initialize(ID3D11Device*, char*, WCHAR*);
 	void Shutdown();
-	void Render(ID3D11DeviceContext*);
 
-	int GetIndexCount();
 	ID3D11ShaderResourceView* GetTexture();
+	int GetVertexCount();
+	void CopyVertexArray(void*);
 
 private:
 	struct VertexType
@@ -55,14 +55,13 @@ private:
 
 	bool InitializeBuffers(ID3D11Device*);
 	void ShutdownBuffers();
-	void RenderBuffers(ID3D11DeviceContext*);
 	
 	int m_terrainWidth, m_terrainHeight;
-	int m_vertexCount, m_indexCount;
-	ID3D11Buffer *m_vertexBuffer, *m_indexBuffer;
-
 	HeightMapType* m_heightMap;
 	TextureClass* m_Texture;
+
+	int m_vertexCount;
+	VertexType* m_vertices;
 };
 
 #endif
