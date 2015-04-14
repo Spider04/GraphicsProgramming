@@ -10,25 +10,24 @@ ApplicationClass::ApplicationClass()
 	m_Direct3D = 0;
 	m_Camera = 0;
 	m_Terrain = 0;
-	m_ColorShader = 0;
+
 	m_Timer = 0;
 	m_Position = 0;
 	m_Fps = 0;
 	m_Cpu = 0;
 	m_FontShader = 0;
 	m_Text = 0;
+
+	m_TerrainShader = 0;
+	m_Light = 0;
 }
-
-
 ApplicationClass::ApplicationClass(const ApplicationClass& other)
 {
 }
 
-
 ApplicationClass::~ApplicationClass()
 {
 }
-
 
 bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeight)
 {
@@ -96,25 +95,10 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	}
 
 	// Initialize the terrain object.
-	result = m_Terrain->Initialize(m_Direct3D->GetDevice());
+	result = m_Terrain->Initialize(m_Direct3D->GetDevice(), "../Engine/data/heightmap01.bmp");
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the terrain object.", L"Error", MB_OK);
-		return false;
-	}
-
-	// Create the color shader object.
-	m_ColorShader = new ColorShaderClass;
-	if(!m_ColorShader)
-	{
-		return false;
-	}
-
-	// Initialize the color shader object.
-	result = m_ColorShader->Initialize(m_Direct3D->GetDevice(), hwnd);
-	if(!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the color shader object.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -204,12 +188,46 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
+
+	//init terrain shader
+	m_TerrainShader = new TerrainShaderClass;
+	if(!m_TerrainShader)
+		return false;
+
+	result = m_TerrainShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if(!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the terrain shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	//init light object
+	m_Light = new LightClass;
+	if(!m_Light)
+		return false;
+
+	m_Light->SetAmbientColor(0.05f, 0.05f, 0.05f, 1.0f);
+	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
+	m_Light->SetDirection(0.0f, 0.0f, 0.75f);
+
 	return true;
 }
 
-
 void ApplicationClass::Shutdown()
 {
+	if(m_Light)
+	{
+		delete m_Light;
+		m_Light = 0;
+	}
+
+	if(m_TerrainShader)
+	{
+		m_TerrainShader->Shutdown();
+		delete m_TerrainShader;
+		m_TerrainShader = 0;
+	}
+
 	// Release the text object.
 	if(m_Text)
 	{
@@ -253,14 +271,6 @@ void ApplicationClass::Shutdown()
 	{
 		delete m_Timer;
 		m_Timer = 0;
-	}
-
-	// Release the color shader object.
-	if(m_ColorShader)
-	{
-		m_ColorShader->Shutdown();
-		delete m_ColorShader;
-		m_ColorShader = 0;
 	}
 
 	// Release the terrain object.
@@ -352,7 +362,6 @@ bool ApplicationClass::Frame()
 	return result;
 }
 
-
 bool ApplicationClass::HandleInput(float frameTime)
 {
 	bool keyDown, result;
@@ -412,13 +421,8 @@ bool ApplicationClass::HandleInput(float frameTime)
 	return true;
 }
 
-
 bool ApplicationClass::RenderGraphics()
 {
-	D3DXMATRIX worldMatrix, viewMatrix, projectionMatrix, orthoMatrix;
-	bool result;
-
-
 	// Clear the scene.
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -426,6 +430,7 @@ bool ApplicationClass::RenderGraphics()
 	m_Camera->Render();
 
 	// Get the world, view, projection, and ortho matrices from the camera and Direct3D objects.
+	D3DXMATRIX worldMatrix, viewMatrix, projectionMatrix, orthoMatrix;
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
@@ -435,11 +440,12 @@ bool ApplicationClass::RenderGraphics()
 	m_Terrain->Render(m_Direct3D->GetDeviceContext());
 
 	// Render the model using the color shader.
-	result = m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix);
+	bool result;
+	result = m_TerrainShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+		m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection());
+
 	if(!result)
-	{
 		return false;
-	}
 
 	// Turn off the Z buffer to begin all 2D rendering.
 	m_Direct3D->TurnZBufferOff();
@@ -450,9 +456,7 @@ bool ApplicationClass::RenderGraphics()
 	// Render the text user interface elements.
 	result = m_Text->Render(m_Direct3D->GetDeviceContext(), m_FontShader, worldMatrix, orthoMatrix);
 	if(!result)
-	{
 		return false;
-	}
 
 	// Turn off alpha blending after rendering the text.
 	m_Direct3D->TurnOffAlphaBlending();

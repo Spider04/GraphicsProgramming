@@ -21,7 +21,7 @@ const float SCREEN_NEAR = 0.1f;
 #include "d3dclass.h"
 #include "cameraclass.h"
 #include "terrainclass.h"
-#include "colorshaderclass.h"
+
 #include "timerclass.h"
 #include "positionclass.h"
 #include "fpsclass.h"
@@ -29,6 +29,8 @@ const float SCREEN_NEAR = 0.1f;
 #include "fontshaderclass.h"
 #include "textclass.h"
 
+#include "terrainshaderclass.h"
+#include "lightclass.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: ApplicationClass
@@ -53,13 +55,16 @@ private:
 	D3DClass* m_Direct3D;
 	CameraClass* m_Camera;
 	TerrainClass* m_Terrain;
-	ColorShaderClass* m_ColorShader;
+
 	TimerClass* m_Timer;
 	PositionClass* m_Position;
 	FpsClass* m_Fps;
 	CpuClass* m_Cpu;
 	FontShaderClass* m_FontShader;
 	TextClass* m_Text;
+
+	TerrainShaderClass* m_TerrainShader;
+	LightClass* m_Light;
 };
 
 #endif
