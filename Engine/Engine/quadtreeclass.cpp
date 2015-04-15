@@ -133,6 +133,7 @@ void QuadTreeClass::CalculateMeshDimensions(int vertexCount, float& centerX, flo
 
 }
 
+
 void QuadTreeClass::CreateTreeNode(NodeType* node, float positionX, float positionZ, float width, ID3D11Device* device)
 {
 	//store node position and size
@@ -144,6 +145,9 @@ void QuadTreeClass::CreateTreeNode(NodeType* node, float positionX, float positi
 	node->triangleCount = 0;
 	node->vertexBuffer = 0;
 	node->indexBuffer = 0;
+
+	//init vertex array
+	node->vertexArray = 0;
 
 	node->nodes[0] = 0;
 	node->nodes[1] = 0;
@@ -197,6 +201,9 @@ void QuadTreeClass::CreateTreeNode(NodeType* node, float positionX, float positi
 	//create index array
 	unsigned long* indices;
 	indices = new unsigned long[vertexCount];
+
+	//create vertex array
+	node->vertexArray = new VectorType[vertexCount];
 	
 	int index = 0, vertexIndex = 0;
 	bool result = false;
@@ -213,20 +220,36 @@ void QuadTreeClass::CreateTreeNode(NodeType* node, float positionX, float positi
 			vertices[index].texture = m_vertexList[vertexIndex].texture;
 			vertices[index].normal = m_vertexList[vertexIndex].normal;
 			indices[index] = index;
-			index++;
 
-			vertexIndex++;
-			vertices[index].position = m_vertexList[vertexIndex].position;
-			vertices[index].texture = m_vertexList[vertexIndex].texture;
-			vertices[index].normal = m_vertexList[vertexIndex].normal;
-			indices[index] = index;
+			//store vertex position in vertex array
+			node->vertexArray[index].x = m_vertexList[vertexIndex].position.x;
+			node->vertexArray[index].y = m_vertexList[vertexIndex].position.y;
+			node->vertexArray[index].z = m_vertexList[vertexIndex].position.z;
+
 			index++;
-			
 			vertexIndex++;
+
 			vertices[index].position = m_vertexList[vertexIndex].position;
 			vertices[index].texture = m_vertexList[vertexIndex].texture;
 			vertices[index].normal = m_vertexList[vertexIndex].normal;
 			indices[index] = index;
+
+			node->vertexArray[index].x = m_vertexList[vertexIndex].position.x;
+			node->vertexArray[index].y = m_vertexList[vertexIndex].position.y;
+			node->vertexArray[index].z = m_vertexList[vertexIndex].position.z;
+
+			index++;
+			vertexIndex++;
+
+			vertices[index].position = m_vertexList[vertexIndex].position;
+			vertices[index].texture = m_vertexList[vertexIndex].texture;
+			vertices[index].normal = m_vertexList[vertexIndex].normal;
+			indices[index] = index;
+
+			node->vertexArray[index].x = m_vertexList[vertexIndex].position.x;
+			node->vertexArray[index].y = m_vertexList[vertexIndex].position.y;
+			node->vertexArray[index].z = m_vertexList[vertexIndex].position.z;
+
 			index++;
 		}
 	}
@@ -366,6 +389,13 @@ void QuadTreeClass::ReleaseNode(NodeType* node)
 		node->indexBuffer = 0;
 	}
 
+	//release vertex array
+	if(node->vertexArray)
+	{
+		delete [] node->vertexArray;
+		node->vertexArray = 0;
+	}
+
 	//release the four node childs
 	for(int i = 0; i < 4; i++)
 	{
@@ -422,4 +452,223 @@ void QuadTreeClass::RenderNode(NodeType* node, FrustumClass* frustum, ID3D11Devi
 	m_drawCount += node->triangleCount;
 
 	return;
+}
+
+//return height at x,z position
+bool QuadTreeClass::GetHeightAtPosition(float positionX, float positionZ, float& height)
+{
+	//checks if position is actually on mesh
+	float meshMinX = 0.0f, meshMaxX = 0.0f, meshMinZ = 0.0f, meshMaxZ = 0.0f;
+
+	meshMinX = m_parentNode->positionX - (m_parentNode->width * 0.5f);
+	meshMaxX = m_parentNode->positionX + (m_parentNode->width * 0.5f);
+
+	meshMinZ = m_parentNode->positionZ - (m_parentNode->width * 0.5f);
+	meshMaxZ = m_parentNode->positionZ + (m_parentNode->width * 0.5f);
+
+	if(positionX < meshMinX || positionX > meshMaxX || positionZ < meshMinZ || positionZ > meshMaxZ)
+		return false;
+
+	//find node and return height
+	FindNode(m_parentNode, positionX, positionZ, height);
+
+	return true;
+}
+
+void QuadTreeClass::FindNode(NodeType* node, float x, float z, float& height)
+{
+
+	//calculate dimensions of node
+	float xMin = 0.0f, xMax = 0.0f, zMin = 0.0f, zMax = 0.0f;
+	xMin = node->positionX - (node->width * 0.5f);
+	xMax = node->positionX + (node->width * 0.5f);
+
+	zMin = node->positionZ - (node->width * 0.5f);
+	zMax = node->positionZ + (node->width * 0.5f);
+
+	//check if position is valid
+	if(x < xMin || x > xMax || z < zMin || z > zMax)
+		return;
+
+	//check if children exist
+	int count = 0;
+	for(int i = 0; i < 4; i++)
+	{
+		if(node->nodes[i] != 0)
+		{
+			count++;
+			FindNode(node->nodes[i], x, z, height);
+		}
+	}
+
+	//return if children exist -> polygon will be on one of the children
+	if(count > 0)
+		return;
+
+	//check all polygons of this node
+	int index = 0;
+	float vertex1[3], vertex2[3], vertex3[3];
+	bool foundHeight = false;
+
+	for(int i = 0; i < node->triangleCount; i++)
+	{
+		index = i * 3;
+		vertex1[0] = node->vertexArray[index].x;
+		vertex1[1] = node->vertexArray[index].y;
+		vertex1[2] = node->vertexArray[index].z;
+
+		index++;
+		vertex2[0] = node->vertexArray[index].x;
+		vertex2[1] = node->vertexArray[index].y;
+		vertex2[2] = node->vertexArray[index].z;
+
+		index++;
+		vertex3[0] = node->vertexArray[index].x;
+		vertex3[1] = node->vertexArray[index].y;
+		vertex3[2] = node->vertexArray[index].z;
+
+		foundHeight = CheckHeightOfTriangle(x, z, height, vertex1, vertex2, vertex3);
+
+		if(foundHeight)
+			return;
+	}
+
+	return;
+}
+
+//create 3 lines form triangle and check if position is inside all 3 lines
+bool QuadTreeClass::CheckHeightOfTriangle(float x, float z, float& height, float v0[3], float v1[3], float v2[3])
+{
+	//start coordinate for raycast
+	float startVector[3];
+	startVector[0] = x;
+	startVector[1] = 0.0f;
+	startVector[2] = z;
+
+	//direction vector for raycast
+	float directionVector[3];
+	directionVector[0] = 0.0f;
+	directionVector[1] = 1.0f;
+	directionVector[2] = 0.0f;
+
+	//calculate then2 edges from the three points
+	float edge1[3];
+	edge1[0] = v1[0] - v0[0];
+	edge1[1] = v1[1] - v0[1];
+	edge1[2] = v1[2] - v0[2];
+
+	float edge2[3];
+	edge2[0] = v2[0] - v0[0];
+	edge2[1] = v2[1] - v0[1];
+	edge2[2] = v2[2] - v0[2];
+
+	//calculate normal of triangle
+	float normal[3];
+	normal[0] = (edge1[1] * edge2[2]) - (edge1[2] * edge2[1]);
+	normal[1] = (edge1[2] * edge2[0]) - (edge1[0] * edge2[2]);
+	normal[2] = (edge1[0] * edge2[1]) - (edge1[1] * edge2[0]);
+
+	float magnitude = 0.0f;
+	magnitude = (float)sqrt((normal[0] * normal[0]) + (normal[1] * normal[1]) + (normal[2] * normal[2]));
+	normal[0] = normal[0] / magnitude;
+	normal[1] = normal[1] / magnitude;
+	normal[2] = normal[2] / magnitude;
+
+	// Find the distance from the origin to the plane.
+	float D = 0.0f;
+	D = ((-normal[0] * v0[0]) + (-normal[1] * v0[1]) + (-normal[2] * v0[2]));
+
+	// Get the denominator of the equation.
+	float denominator = 0.0f;
+	denominator = ((normal[0] * directionVector[0]) + (normal[1] * directionVector[1]) + (normal[2] * directionVector[2]));
+
+	//prevent division by zero
+	if(fabs(denominator) < 0.0001f)
+		return false;
+
+	//get numerator
+	float numerator = 0.0f;
+	numerator = -1.0f * (((normal[0] * startVector[0]) + (normal[1] * startVector[1]) + (normal[2] * startVector[2])) + D);
+
+	// Calculate where we intersect the triangle.
+	float t = 0.0f;
+	t = numerator / denominator;
+
+	// Find the intersection vector.
+	float Q[3];
+	Q[0] = startVector[0] + (directionVector[0] * t);
+	Q[1] = startVector[1] + (directionVector[1] * t);
+	Q[2] = startVector[2] + (directionVector[2] * t);
+
+	// Find the three edges of the triangle.
+	float e1[3];
+	e1[0] = v1[0] - v0[0];
+	e1[1] = v1[1] - v0[1];
+	e1[2] = v1[2] - v0[2];
+
+	float e2[3];
+	e2[0] = v2[0] - v1[0];
+	e2[1] = v2[1] - v1[1];
+	e2[2] = v2[2] - v1[2];
+
+	float e3[3];
+	e3[0] = v0[0] - v2[0];
+	e3[1] = v0[1] - v2[1];
+	e3[2] = v0[2] - v2[2];
+
+	// Calculate the normal for the first edge.
+	float edgeNormal[3];
+	edgeNormal[0] = (e1[1] * normal[2]) - (e1[2] * normal[1]);
+	edgeNormal[1] = (e1[2] * normal[0]) - (e1[0] * normal[2]);
+	edgeNormal[2] = (e1[0] * normal[1]) - (e1[1] * normal[0]);
+
+	// Calculate the determinant to see if it is on the inside, outside, or directly on the edge.
+	float temp[3];
+	temp[0] = Q[0] - v0[0];
+	temp[1] = Q[1] - v0[1];
+	temp[2] = Q[2] - v0[2];
+
+	float determinant = 0.0f;
+	determinant = ((edgeNormal[0] * temp[0]) + (edgeNormal[1] * temp[1]) + (edgeNormal[2] * temp[2]));
+
+	// Check if it is outside.
+	if(determinant > 0.001f)
+		return false;
+
+	// Calculate the normal for the second edge.
+	edgeNormal[0] = (e2[1] * normal[2]) - (e2[2] * normal[1]);
+	edgeNormal[1] = (e2[2] * normal[0]) - (e2[0] * normal[2]);
+	edgeNormal[2] = (e2[0] * normal[1]) - (e2[1] * normal[0]);
+
+	// Calculate the determinant to see if it is on the inside, outside, or directly on the edge.
+	temp[0] = Q[0] - v1[0];
+	temp[1] = Q[1] - v1[1];
+	temp[2] = Q[2] - v1[2];
+
+	determinant = ((edgeNormal[0] * temp[0]) + (edgeNormal[1] * temp[1]) + (edgeNormal[2] * temp[2]));
+
+	// Check if it is outside.
+	if(determinant > 0.001f)
+		return false;
+
+	// Calculate the normal for the third edge.
+	edgeNormal[0] = (e3[1] * normal[2]) - (e3[2] * normal[1]);
+	edgeNormal[1] = (e3[2] * normal[0]) - (e3[0] * normal[2]);
+	edgeNormal[2] = (e3[0] * normal[1]) - (e3[1] * normal[0]);
+
+	// Calculate the determinant to see if it is on the inside, outside, or directly on the edge.
+	temp[0] = Q[0] - v2[0];
+	temp[1] = Q[1] - v2[1];
+	temp[2] = Q[2] - v2[2];
+
+	determinant = ((edgeNormal[0] * temp[0]) + (edgeNormal[1] * temp[1]) + (edgeNormal[2] * temp[2]));
+
+	// Check if it is outside.
+	if(determinant > 0.001f)
+		return false;
+
+	// Now we have our height.
+	height = Q[1];
+
+	return true;
 }

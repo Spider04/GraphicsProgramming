@@ -1,32 +1,10 @@
-﻿Build started 15/04/2015 09:01:24.
-     1>Project "C:\Users\1404272\Downloads\Engine\Engine\Engine.vcxproj" on node 2 (rebuild target(s)).
-     1>_PrepareForClean:
-         Deleting file "Debug\Engine.lastbuildstate".
-       InitializeBuildStatus:
-         Creating "Debug\Engine.unsuccessfulbuild" because "AlwaysCreate" was specified.
+﻿Build started 15/04/2015 10:00:41.
+     1>Project "C:\Users\1404272\Downloads\Engine\Engine\Engine.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "Debug\Engine.unsuccessfulbuild".
        ClCompile:
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt applicationclass.cpp cameraclass.cpp colorshaderclass.cpp cpuclass.cpp d3dclass.cpp fontclass.cpp fontshaderclass.cpp fpsclass.cpp frustumclass.cpp inputclass.cpp lightclass.cpp main.cpp positionclass.cpp quadtreeclass.cpp systemclass.cpp terrainclass.cpp terrainshaderclass.cpp textclass.cpp textureclass.cpp timerclass.cpp
-         timerclass.cpp
-         textureclass.cpp
-         textclass.cpp
-         terrainshaderclass.cpp
-         terrainclass.cpp
-         systemclass.cpp
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt quadtreeclass.cpp
          quadtreeclass.cpp
-         positionclass.cpp
-         main.cpp
-         lightclass.cpp
-         inputclass.cpp
-         frustumclass.cpp
-         fpsclass.cpp
-         fontshaderclass.cpp
-         fontclass.cpp
-         d3dclass.cpp
-         cpuclass.cpp
-         colorshaderclass.cpp
-         cameraclass.cpp
-         applicationclass.cpp
-         Generating Code...
        ManifestResourceCompile:
          C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Debug\Engine.exe.embed.manifest.res" Debug\Engine_manifest.rc 
        Link:
@@ -52,7 +30,6 @@
          Debug\textureclass.obj
          Debug\timerclass.obj
        Manifest:
-         Deleting file "Debug\Engine.exe.embed.manifest".
          C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Debug\Engine.exe.embed.manifest" /manifest Debug\Engine.exe.intermediate.manifest
          C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Debug\Engine.exe.embed.manifest.res" Debug\Engine_manifest.rc 
        LinkEmbedManifest:
@@ -81,8 +58,8 @@
        FinalizeBuildStatus:
          Deleting file "Debug\Engine.unsuccessfulbuild".
          Touching "Debug\Engine.lastbuildstate".
-     1>Done Building Project "C:\Users\1404272\Downloads\Engine\Engine\Engine.vcxproj" (rebuild target(s)).
+     1>Done Building Project "C:\Users\1404272\Downloads\Engine\Engine\Engine.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:10.26
+Time Elapsed 00:00:01.77

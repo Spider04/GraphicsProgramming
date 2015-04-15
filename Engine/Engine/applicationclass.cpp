@@ -384,6 +384,20 @@ bool ApplicationClass::Frame()
 	{
 		return false;
 	}
+	
+	//---- get position of camera and height underneath it - set camera two units above
+	//get current position of camera
+	D3DXVECTOR3 position;
+	position = m_Camera->GetPosition();
+
+	//get height of triangle underneath, if camera is over mesh
+	float height = 0.0f;
+	bool foundHeight = false;
+
+	foundHeight = m_QuadTree->GetHeightAtPosition(position.x, position.z, height);
+	if(foundHeight)
+		m_Camera->SetPosition(position.x, height + 2.0f, position.z);
+	
 
 	// Render the graphics.
 	result = RenderGraphics();
