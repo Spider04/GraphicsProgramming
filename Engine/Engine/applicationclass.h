@@ -8,10 +8,14 @@
 /////////////
 // GLOBALS //
 /////////////
-const bool FULL_SCREEN = true;
+const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = true;
+
 const float SCREEN_DEPTH = 1000.0f;
 const float SCREEN_NEAR = 0.1f;
+
+const int DUNGEON_WIDTH = 256;
+const int DUNGEON_HEIGHT = 256;
 
 
 ///////////////////////
@@ -34,6 +38,7 @@ const float SCREEN_NEAR = 0.1f;
 
 #include "frustumclass.h"
 #include "quadtreeclass.h"
+#include "dungeon_generator.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: ApplicationClass
@@ -70,7 +75,8 @@ private:
 	LightClass* m_Light;
 
 	FrustumClass* m_Frustum;
-	QuadTreeClass* m_QuadTree; 
+	QuadTreeClass* m_QuadTree;
+	DungeonGeneratorClass* m_DungeonGenerator;
 };
 
 #endif

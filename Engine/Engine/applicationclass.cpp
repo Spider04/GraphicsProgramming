@@ -22,6 +22,8 @@ ApplicationClass::ApplicationClass()
 	m_Light = 0;
 	m_Frustum = 0;
 	m_QuadTree = 0;
+
+	m_DungeonGenerator = 0;
 }
 ApplicationClass::ApplicationClass(const ApplicationClass& other)
 {
@@ -33,7 +35,20 @@ ApplicationClass::~ApplicationClass()
 
 bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeight)
 {
-	bool result;
+	bool result = false;
+
+	//create dungeon generator first - influences build of whole level
+	m_DungeonGenerator = new DungeonGeneratorClass;
+	if(!m_DungeonGenerator)
+		return false;
+
+	result = m_DungeonGenerator->Initialize(DUNGEON_WIDTH, DUNGEON_HEIGHT);
+	if(!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the dungeon object.", L"Error", MB_OK);
+		return false;
+	}
+
 	float cameraX, cameraY, cameraZ;
 	D3DXMATRIX baseViewMatrix;
 	char videoCard[128];
@@ -85,7 +100,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	// Set the initial position of the camera.
 	cameraX = 50.0f;
 	cameraY = 2.0f;
-	cameraZ = -7.0f;
+	cameraZ = 50.0f;
 
 	m_Camera->SetPosition(cameraX, cameraY, cameraZ);
 
@@ -97,7 +112,8 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	}
 
 	// Initialize the terrain object.
-	result = m_Terrain->Initialize(m_Direct3D->GetDevice(), "../Engine/data/heightmap01.bmp", L"../Engine/data/dirt01.dds");
+	//result = m_Terrain->Initialize(m_Direct3D->GetDevice(), "../Engine/data/heightmap01.bmp", L"../Engine/data/dirt01.dds");
+	result = m_Terrain->Initialize(m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData(), L"../Engine/data/dirt01.dds");
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the terrain object.", L"Error", MB_OK);
@@ -230,11 +246,27 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
+	
+	//set seed text for this dungeon
+	result = m_Text->SetDungeonRandSeed(m_DungeonGenerator->GetDungeonSeed(), m_Direct3D->GetDeviceContext());
+	if(!result)
+	{
+		MessageBox(hwnd, L"Could not get dungeon seed.", L"Error", MB_OK);
+		return false;
+	}
+
 	return true;
 }
 
 void ApplicationClass::Shutdown()
 {
+	if(m_DungeonGenerator)
+	{
+		m_DungeonGenerator->Shutdown();
+		delete m_DungeonGenerator;
+		m_DungeonGenerator = 0;
+	}
+
 	if(m_QuadTree)
 	{
 		m_QuadTree->Shutdown();
@@ -387,7 +419,7 @@ bool ApplicationClass::Frame()
 	
 	//---- get position of camera and height underneath it - set camera two units above
 	//get current position of camera
-	D3DXVECTOR3 position;
+	/*D3DXVECTOR3 position;
 	position = m_Camera->GetPosition();
 
 	//get height of triangle underneath, if camera is over mesh
@@ -397,7 +429,7 @@ bool ApplicationClass::Frame()
 	foundHeight = m_QuadTree->GetHeightAtPosition(position.x, position.z, height);
 	if(foundHeight)
 		m_Camera->SetPosition(position.x, height + 2.0f, position.z);
-	
+	*/
 
 	// Render the graphics.
 	result = RenderGraphics();

@@ -39,6 +39,33 @@ bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename, WCH
 	return result;
 }
 
+bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::DungeonData* dungeonArray, WCHAR* textureFilename)
+{
+	//load height map for the terrain
+	bool result;
+	result = LoadHeightMap(dungeonArray);
+	if(!result)
+		return false;
+
+	//normalize the height
+	NormalizeHeightMap();
+
+	//calculate shared normals for lighting
+	result = CalculateNormals();
+	if(!result)
+		return false;
+
+	//calculate texture coordinates and load texture
+	CalculateTextureCoordinates();
+	result = LoadTexture(device, textureFilename);
+	if(!result)
+		return false;
+
+	// Initialize vertex array that will hold the geometry
+	result = InitializeBuffers(device);
+	return result;
+}
+
 void TerrainClass::Shutdown()
 {
 	//release texture
@@ -69,7 +96,7 @@ void TerrainClass::CopyVertexArray(void* vertexList)
 	memcpy(vertexList, m_vertices, sizeof(VertexType) * m_vertexCount);
 }
 
-
+//load height map via file
 bool TerrainClass::LoadHeightMap(char* filename)
 {
 	//open height map in binary
@@ -150,6 +177,34 @@ bool TerrainClass::LoadHeightMap(char* filename)
 	//release bitmap image data
 	delete [] bitmapImage;
 	bitmapImage = 0;
+	
+	return true;
+}
+
+//load height map via dungeon array
+bool TerrainClass::LoadHeightMap(DungeonGeneratorClass::DungeonData* dungeonData)
+{
+	//get size of terrain from the image
+	m_terrainWidth = dungeonData->dungeonWidth;
+	m_terrainHeight = dungeonData->dungeonHeight;
+
+	//create structure for height map data
+	m_heightMap = new HeightMapType[m_terrainWidth * m_terrainHeight];
+	if(!m_heightMap)
+		return false;
+
+	int index = 0;
+	for(int j = 0; j < m_terrainHeight; j++)
+	{
+		for(int i = 0; i < m_terrainWidth; i++)
+		{
+			index = (m_terrainHeight * j) + i;
+
+			m_heightMap[index].x = (float)i;
+			m_heightMap[index].y = (float)dungeonData->dungeonArray[index];
+			m_heightMap[index].z = (float)j;
+		}
+	}
 	
 	return true;
 }

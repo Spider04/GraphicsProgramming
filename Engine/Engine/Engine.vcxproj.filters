@@ -95,6 +95,9 @@
     <ClInclude Include="frustumclass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dungeon_generator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="applicationclass.cpp">
@@ -155,6 +158,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="quadtreeclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dungeon_generator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

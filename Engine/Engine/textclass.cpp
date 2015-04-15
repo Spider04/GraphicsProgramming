@@ -11,13 +11,16 @@ TextClass::TextClass()
 	m_sentence2 = 0;
 	m_sentence3 = 0;
 	m_sentence4 = 0;
+	
 	m_sentence5 = 0;
 	m_sentence6 = 0;
 	m_sentence7 = 0;
 	m_sentence8 = 0;
 	m_sentence9 = 0;
 	m_sentence10 = 0;
+
 	m_sentence11 = 0;
+	m_sentence12 = 0;
 }
 TextClass::TextClass(const TextClass& other)
 {
@@ -133,6 +136,13 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 		return false;
 	}
 
+	// Initialize the twelth sentence.
+	result = InitializeSentence(&m_sentence12, 32, device);
+	if(!result)
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -158,6 +168,7 @@ void TextClass::Shutdown()
 	ReleaseSentence(&m_sentence9);
 	ReleaseSentence(&m_sentence10);
 	ReleaseSentence(&m_sentence11);
+	ReleaseSentence(&m_sentence12);
 
 	return;
 }
@@ -229,6 +240,12 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext, FontShaderClass* Font
 	}
 	
 	result = RenderSentence(m_sentence11, deviceContext, FontShader, worldMatrix, orthoMatrix);
+	if(!result)
+	{
+		return false;
+	}
+
+	result = RenderSentence(m_sentence12, deviceContext, FontShader, worldMatrix, orthoMatrix);
 	if(!result)
 	{
 		return false;
@@ -691,6 +708,29 @@ bool TextClass::SetRenderCount(int count, ID3D11DeviceContext* deviceContext)
 	//update sentence vertex buffer
 	bool result = false;
 	result = UpdateSentence(m_sentence11, renderString, 10, 290, 0.0f, 1.0f, 0.0f, deviceContext);
+
+	return result;
+}
+
+//set text for displaying the seed
+bool TextClass::SetDungeonRandSeed(unsigned int seed, ID3D11DeviceContext* deviceContext)
+{
+	//truncate render count to prevent buffer overflow
+	if(seed > 999999999999)
+		seed = 999999999999;
+
+	//convert cpu int to string
+	char tempString[16];
+	_itoa_s(seed, tempString, 13);
+
+	//setup cpu string
+	char renderString[32];
+	strcpy_s(renderString, "Current Seed: ");
+	strcat_s(renderString, tempString);
+
+	//update sentence vertex buffer
+	bool result = false;
+	result = UpdateSentence(m_sentence12, renderString, 10, 330, 0.0f, 1.0f, 0.0f, deviceContext);
 
 	return result;
 }

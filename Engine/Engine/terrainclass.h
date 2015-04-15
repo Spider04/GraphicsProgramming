@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include "textureclass.h"
+#include "dungeon_generator.h"
 
 //defines how often the texture repeats over the grid
 const int TEXTURE_REPEAT = 8;
@@ -18,6 +19,7 @@ public:
 	~TerrainClass();
 
 	bool Initialize(ID3D11Device*, char*, WCHAR*);
+	bool Initialize(ID3D11Device*, DungeonGeneratorClass::DungeonData*, WCHAR*);
 	void Shutdown();
 
 	ID3D11ShaderResourceView* GetTexture();
@@ -45,6 +47,8 @@ private:
 	};
 
 	bool LoadHeightMap(char*);
+	bool LoadHeightMap(DungeonGeneratorClass::DungeonData*);
+
 	void NormalizeHeightMap();
 	bool CalculateNormals();
 	void ShutdownHeightMap();
