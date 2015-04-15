@@ -127,7 +127,7 @@ void QuadTreeClass::CalculateMeshDimensions(int vertexCount, float& centerX, flo
 	maxZ = (float)max(fabs(minDepth), fabs(maxDepth));
 
 	//calc maximum diameter of mesh
-	meshWidth = max(maxX, MaxZ) * 2.0f;
+	meshWidth = max(maxX, maxZ) * 2.0f;
 
 	return;
 

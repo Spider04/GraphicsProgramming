@@ -32,6 +32,9 @@ const float SCREEN_NEAR = 0.1f;
 #include "terrainshaderclass.h"
 #include "lightclass.h"
 
+#include "frustumclass.h"
+#include "quadtreeclass.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: ApplicationClass
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,6 +68,9 @@ private:
 
 	TerrainShaderClass* m_TerrainShader;
 	LightClass* m_Light;
+
+	FrustumClass* m_Frustum;
+	QuadTreeClass* m_QuadTree; 
 };
 
 #endif

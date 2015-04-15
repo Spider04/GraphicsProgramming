@@ -20,6 +20,8 @@ ApplicationClass::ApplicationClass()
 
 	m_TerrainShader = 0;
 	m_Light = 0;
+	m_Frustum = 0;
+	m_QuadTree = 0;
 }
 ApplicationClass::ApplicationClass(const ApplicationClass& other)
 {
@@ -210,11 +212,42 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetDirection(-0.5f, -1.0f, 0.0f);
 
+
+	//init frustum object
+	m_Frustum = new FrustumClass;
+	if(!m_Frustum)
+		return false;
+
+	//init quad tree object
+	m_QuadTree = new QuadTreeClass;
+	if(!m_QuadTree)
+		return false;
+
+	result = m_QuadTree->Initialize(m_Terrain, m_Direct3D->GetDevice());
+	if(!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the quad tree object.", L"Error", MB_OK);
+		return false;
+	}
+
 	return true;
 }
 
 void ApplicationClass::Shutdown()
 {
+	if(m_QuadTree)
+	{
+		m_QuadTree->Shutdown();
+		delete m_QuadTree;
+		m_QuadTree = 0;
+	}
+
+	if(m_Frustum)
+	{
+		delete m_Frustum;
+		m_Frustum = 0;
+	}
+
 	if(m_Light)
 	{
 		delete m_Light;
@@ -436,16 +469,26 @@ bool ApplicationClass::RenderGraphics()
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Direct3D->GetOrthoMatrix(orthoMatrix);
 
-	// Render the terrain buffers.
-	m_Terrain->Render(m_Direct3D->GetDeviceContext());
 
-	// Render the model using the color shader.
+	//construct frustum based on view and projection matrix
+	m_Frustum->ConstructFrustum(SCREEN_DEPTH, projectionMatrix, viewMatrix);
+
+	//set terrain shader parameters before rendering the nodes
 	bool result;
-	result = m_TerrainShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+	result = m_TerrainShader->SetShaderParameters(m_Direct3D->GetDeviceContext(), worldMatrix, viewMatrix, projectionMatrix,
 		m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection(), m_Terrain->GetTexture());
 
 	if(!result)
 		return false;
+
+	//render all visible nodes (frstum object for culling, terrain shader for drawing
+	m_QuadTree->Render(m_Frustum, m_Direct3D->GetDeviceContext(), m_TerrainShader);
+
+	//set number of drawn triangles
+	result = m_Text->SetRenderCount(m_QuadTree->GetDrawCount(), m_Direct3D->GetDeviceContext());
+	if(!result)
+		return false;
+
 
 	// Turn off the Z buffer to begin all 2D rendering.
 	m_Direct3D->TurnZBufferOff();

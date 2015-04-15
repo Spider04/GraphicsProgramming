@@ -400,14 +400,13 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 	m_vertexCount = (m_terrainWidth - 1) * (m_terrainHeight - 1) * 6;
 
 	// Create the vertex array.
-	VertexType* vertices;
-	vertices = new VertexType[m_vertexCount];
-	if(!vertices)
+	m_vertices = new VertexType[m_vertexCount];
+	if(!m_vertices)
 		return false;
 
 	// Initialize the index to the vertex array.
 	int index = 0;
-	int index1, index2, index3, index4 = 0;
+	int index1 = 0, index2 = 0, index3 = 0, index4 = 0;
 	float tu, tv = 0.0f;
 
 	// Load the vertex and index arrays with the terrain data.
@@ -416,9 +415,9 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 		for(int i = 0; i < (m_terrainWidth-1); i++)
 		{
 			index1 = (m_terrainHeight * j) + i;          // Bottom left.
-			index2 = (m_terrainHeight * j) + (i+1);      // Bottom right.
-			index3 = (m_terrainHeight * (j+1)) + i;      // Upper left.
-			index4 = (m_terrainHeight * (j+1)) + (i+1);  // Upper right.
+			index2 = (m_terrainHeight * j) + i + 1;      // Bottom right.
+			index3 = (m_terrainHeight * (j + 1)) + i;      // Upper left.
+			index4 = (m_terrainHeight * (j + 1)) + i + 1;  // Upper right.
 
 			// Upper left.
 			tv = m_heightMap[index3].tv;

@@ -680,13 +680,12 @@ bool TextClass::SetRenderCount(int count, ID3D11DeviceContext* deviceContext)
 		count = 999999999;
 
 	//convert cpu int to string
+	char tempString[16];
 	_itoa_s(count, tempString, 10);
 
 	//setup cpu string
 	char renderString[32];
 	strcpy_s(renderString, "Render Count: ");
-	
-	char tempString[16];
 	strcat_s(renderString, tempString);
 
 	//update sentence vertex buffer
