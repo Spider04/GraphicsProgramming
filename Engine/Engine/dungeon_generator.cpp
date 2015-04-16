@@ -16,6 +16,7 @@ bool DungeonGeneratorClass::Initialize(int dungeonWidth, int dungeonHeight)
 	m_dungeonData = new DungeonData;
 	m_dungeonData->dungeonWidth = dungeonWidth;
 	m_dungeonData->dungeonHeight = dungeonHeight;
+	m_dungeonData->collectibles = new std::deque<DungeonGeneratorClass::CollectibleData*>;
 
 	int lastIndex = 0;
 	lastIndex = (dungeonHeight * dungeonWidth) - 1;
@@ -25,9 +26,8 @@ bool DungeonGeneratorClass::Initialize(int dungeonWidth, int dungeonHeight)
 		return false;
 
 	for(int i = 0; i < lastIndex; i++)
-		m_dungeonData->dungeonArray[i] = 100;
+		m_dungeonData->dungeonArray[i] = DUNGEON_WALLHEIGHT;
 
-	//init room data
 	for(int i = 0; i < DUNGEON_ROOMS; i++)
 	{
 		m_roomData[i] = 0;
@@ -39,15 +39,11 @@ bool DungeonGeneratorClass::Initialize(int dungeonWidth, int dungeonHeight)
 		m_roomData[i]->exits->east = 0;
 	}
 
-	//init pathfinding lists
-	openList = new std::deque<PathFindingNode*>;
-	closedList = new std::deque<PathFindingNode*>;
-
 	//generate initial dungeon
-	bool result = false;
+	/*bool result = false;
 	result = GenerateNewDungeon(DUNGEON_ROOMS);
-	
-	return result;
+	*/
+	return true;
 }
 
 void DungeonGeneratorClass::Shutdown()
@@ -55,7 +51,7 @@ void DungeonGeneratorClass::Shutdown()
 	ReleaseRooms();
 
 	if(m_dungeonData)
-	{
+	{	
 		delete m_dungeonData;
 		m_dungeonData = 0;
 	}
@@ -66,19 +62,46 @@ unsigned int DungeonGeneratorClass::GetDungeonSeed()
 	return m_lastUsedSeed;
 }
 
-bool DungeonGeneratorClass::GenerateNewDungeon(int amountOfRooms)
+bool DungeonGeneratorClass::GenerateNewDungeon(int amountOfRooms, D3DClass* d3d)
 {
 	//create new room array (for pathfinding and spawning object)
 	ReleaseRooms();
+
+	//init room data
+	m_roomAmount = 0;
+	for(int i = 0; i < DUNGEON_ROOMS; i++)
+	{
+		m_roomData[i] = 0;
+		m_roomData[i] = new RoomData;
+		m_roomData[i]->exits = new ExitIndexes;
+		m_roomData[i]->exits->north = 0;
+		m_roomData[i]->exits->south = 0;
+		m_roomData[i]->exits->west = 0;
+		m_roomData[i]->exits->east = 0;
+	}
+	m_dungeonData->collectibles = new std::deque<DungeonGeneratorClass::CollectibleData*>;
+	
+	//init pathfinding lists
+	openList = new std::deque<PathFindingNode*>;
+	closedList = new std::deque<PathFindingNode*>;
+
+	//reset terrain
+	int dungeonWidth = m_dungeonData->dungeonWidth;
+	int dungeonHeight = m_dungeonData->dungeonHeight;
+
+	for(int i = 0; i < dungeonHeight; i++)
+	{
+		for(int j = 0; j < dungeonWidth; j++)
+		{
+			m_dungeonData->dungeonArray[(j + (dungeonWidth * i))] = DUNGEON_WALLHEIGHT;
+		}
+	}
 
 	//get seed and use it to init the random function
 	m_lastUsedSeed = (unsigned int)time(NULL);
 	srand(m_lastUsedSeed);
 
 	int startIndex = 0;
-
-	int dungeonWidth = m_dungeonData->dungeonWidth;
-	int dungeonHeight = m_dungeonData->dungeonHeight;
 	bool result = false;
 
 	//create all rooms (for now, for 4 set dungeons)
@@ -89,9 +112,9 @@ bool DungeonGeneratorClass::GenerateNewDungeon(int amountOfRooms)
 		else if(i < 2)
 			startIndex = dungeonWidth / 2;
 		else if(i < 3)
-			startIndex = dungeonWidth * (dungeonHeight / 2);
-		else
 			startIndex = (dungeonWidth / 2) + (dungeonWidth * (dungeonHeight / 2));
+		else
+			startIndex = dungeonWidth * (dungeonHeight / 2);
 			
 		result = GenerateRoom(dungeonWidth / 2, dungeonHeight / 2, startIndex);
 		if(!result)
@@ -101,28 +124,16 @@ bool DungeonGeneratorClass::GenerateNewDungeon(int amountOfRooms)
 	//connect all rooms together
 	for(int i = 0; i < DUNGEON_ROOMS; i++)
 	{
-		if(i < DUNGEON_ROOMS - 1)
+		if(i < (DUNGEON_ROOMS - 1))
 			ConnectTwoRooms(m_roomData[i], m_roomData[i + 1]);
 		else
 			ConnectTwoRooms(m_roomData[i], m_roomData[0]);
+
+		//spawn collectibles in the room
+		SpawnCollectibles(m_roomData[i], d3d);
 	}
 
-	//temp: set borders to 0
-	int tmpInt = 0;
-	for(int i = 0; i < dungeonHeight; i++)
-	{
-		for(int j = 0; j < dungeonWidth; j++)
-		{
-			tmpInt = j + (i * dungeonWidth);
-			if(tmpInt % dungeonWidth == dungeonHeight / 2)
-				m_dungeonData->dungeonArray[tmpInt] = 0;
-
-			else if(tmpInt >= (dungeonHeight / 2 * dungeonWidth) && tmpInt < ((dungeonHeight / 2 * dungeonWidth) + dungeonWidth))
-				m_dungeonData->dungeonArray[tmpInt] = 0;
-		}
-	}
-
-	return true;
+	return result;
 }
 
 bool DungeonGeneratorClass::GenerateRoom(int areaWidth, int areaHeight, int startIndex)
@@ -173,7 +184,7 @@ bool DungeonGeneratorClass::GenerateRoom(int areaWidth, int areaHeight, int star
 	}
 
 	//save room data
-	m_roomData[m_roomAmount] = new RoomData;
+	//m_roomData[m_roomAmount] = new RoomData;
 	if(!m_roomData[m_roomAmount])
 		return false;
 
@@ -183,7 +194,7 @@ bool DungeonGeneratorClass::GenerateRoom(int areaWidth, int areaHeight, int star
 	m_roomData[m_roomAmount]->length = roomHeight;
 	m_roomData[m_roomAmount]->areaTopLeftIndex = startIndex;
 
-	m_roomData[m_roomAmount]->exits = new ExitIndexes;
+	//m_roomData[m_roomAmount]->exits = new ExitIndexes;
 	m_roomData[m_roomAmount]->exits->north = 0;
 	m_roomData[m_roomAmount]->exits->south = 0;
 	m_roomData[m_roomAmount]->exits->west = 0;
@@ -194,12 +205,6 @@ bool DungeonGeneratorClass::GenerateRoom(int areaWidth, int areaHeight, int star
 	{
 		SetRoomExit(m_roomData[m_roomAmount], i);
 	}
-
-	//temp show exit positions
-	m_dungeonData->dungeonArray[m_roomData[m_roomAmount]->exits->north] = 200;
-	m_dungeonData->dungeonArray[m_roomData[m_roomAmount]->exits->south] = 200;
-	m_dungeonData->dungeonArray[m_roomData[m_roomAmount]->exits->west] = 200;
-	m_dungeonData->dungeonArray[m_roomData[m_roomAmount]->exits->east] = 200;
 
 	m_roomAmount++;
 	
@@ -212,11 +217,26 @@ void DungeonGeneratorClass::ReleaseRooms()
 	{
 		if(m_roomData[i])
 		{
-			//delete m_roomData[i];
-			delete m_roomData[i]->exits;
-			m_roomData[i]->exits = 0;
+			if(m_roomData[i]->exits)
+			{
+				delete m_roomData[i]->exits;
+				m_roomData[i]->exits = 0;
+			}
 			m_roomData[i] = 0;
 		}
+	}
+
+	//release collectibles
+	if(m_dungeonData->collectibles)
+	{
+		for(int j = 0; j < (int)m_dungeonData->collectibles->size(); j++)
+		{
+			m_dungeonData->collectibles->at(j)->model->Shutdown();
+			delete m_dungeonData->collectibles->at(j);
+			m_dungeonData->collectibles->at(j) = 0;
+		}
+		m_dungeonData->collectibles->clear();
+		m_dungeonData->collectibles = 0;
 	}
 }
 
@@ -295,11 +315,11 @@ void DungeonGeneratorClass::SetRoomExit(RoomData* room, int exitIndex)
 
 	//set west exit
 	else if(exitIndex == 3)
-		room->exits->west = room->topLeftIndex + ((room->length / 2) * m_dungeonData->dungeonWidth);
+		room->exits->west = room->topLeftIndex + ((room->length / 2) * m_dungeonData->dungeonWidth) + (room->width - 1);
 
 	//set east exit
 	else if(exitIndex == 1)
-		room->exits->east = room->topLeftIndex + ((room->length / 2) * m_dungeonData->dungeonWidth) + (room->width - 1);
+		room->exits->east = room->topLeftIndex + ((room->length / 2) * m_dungeonData->dungeonWidth);
 }
 
 DungeonGeneratorClass::DungeonData* DungeonGeneratorClass::GetDungeonData()
@@ -321,19 +341,19 @@ void DungeonGeneratorClass::ConnectTwoRooms(RoomData* room1, RoomData* room2)
 	//case: rooms are horizontally connected
 	if(roomRowNumber[0] == roomRowNumber[1] && roomColNumber[0] != roomColNumber[1])
 	{
-		if(room1->topLeftIndex < room2->topLeftIndex)
-			CreatePathBetweenPoints(room1->exits->east, room2->exits->west, 2);
+		if(roomColNumber[0] > roomColNumber[1])
+			CreatePathBetweenPoints(room1->exits->east, room2->exits->west);
 		else
-			CreatePathBetweenPoints(room1->exits->west, room2->exits->east, 6);
+			CreatePathBetweenPoints(room1->exits->west, room2->exits->east);
 	}
 
 	//case: rooms are vertically connected
 	else if(roomRowNumber[0] != roomRowNumber[1] && roomColNumber[0] == roomColNumber[1])
 	{
-		if(room1->topLeftIndex < room2->topLeftIndex)
-			CreatePathBetweenPoints(room1->exits->south, room2->exits->north, 4);
+		if(roomRowNumber[0] < roomRowNumber[1])
+			CreatePathBetweenPoints(room1->exits->south, room2->exits->north);
 		else
-			CreatePathBetweenPoints(room1->exits->north, room2->exits->south, 0);
+			CreatePathBetweenPoints(room1->exits->north, room2->exits->south);
 	}
 
 	//last case, they are slightly diagonal - no solution so far
@@ -341,8 +361,8 @@ void DungeonGeneratorClass::ConnectTwoRooms(RoomData* room1, RoomData* room2)
 	return;
 }
 
-//Dijkstra algorithm to calculate path to entry
-bool DungeonGeneratorClass::CreatePathBetweenPoints(int startIndex, int endIndex, int preferredDirection)
+//AStar algorithm to calculate path to entry
+bool DungeonGeneratorClass::CreatePathBetweenPoints(int startIndex, int endIndex)
 {
 	PathFindingNode* entryNode = new PathFindingNode;
 	entryNode->costSoFar = 0;
@@ -380,7 +400,7 @@ bool DungeonGeneratorClass::CreatePathBetweenPoints(int startIndex, int endIndex
 
 		int connectIndex = -1;
 		//get new index, depending on direction
-		for(int i = 0; i < 8; i++)
+		for(int i = 0; i < 4; i++)
 		{
 			PathFindingNode* endNode = new PathFindingNode;
 			connectIndex = GetConnectedIndex(currentNode->index, i);
@@ -388,6 +408,7 @@ bool DungeonGeneratorClass::CreatePathBetweenPoints(int startIndex, int endIndex
 			{
 				newCostSoFar = currentNode->costSoFar + 1;
 
+				//node from closed list
 				if(IsInList(connectIndex, closedList))
 				{
 					GetNodeByIndexFromList(connectIndex, endNode, closedList);
@@ -399,6 +420,7 @@ bool DungeonGeneratorClass::CreatePathBetweenPoints(int startIndex, int endIndex
 					heuristicEstimate = endNode->estimatedCosts;
 				}
 
+				//node from open list
 				else if(IsInList(connectIndex, openList))
 				{
 					GetNodeByIndexFromList(connectIndex, endNode, openList);
@@ -430,6 +452,16 @@ bool DungeonGeneratorClass::CreatePathBetweenPoints(int startIndex, int endIndex
 		SortList(openList);
 
 		pathFindCounter++;
+
+		if(pathFindCounter == 100)
+		{
+			PathFindingNode* tmp = new PathFindingNode;
+			tmp = openList->front();
+
+			int hValue = 0;
+			CalculateHeuristicValue(tmp->index, endIndex, hValue);
+		}
+			
 	}
 
 	if(currentNode->index != endIndex)
@@ -442,6 +474,8 @@ bool DungeonGeneratorClass::CreatePathBetweenPoints(int startIndex, int endIndex
 		while(currentNode->index != startIndex && counter < 999999999)
 		{
 			m_dungeonData->dungeonArray[currentNode->index] = 0;
+			CarvePathPoint(currentNode->index);
+
 			if(currentNode->parentIndex == -1)
 				return false;
 			
@@ -478,12 +512,9 @@ bool DungeonGeneratorClass::IsInList(int index, std::deque<PathFindingNode*> *li
 		list->pop_front();
 	}
 
-	delete tmp;
-	tmp = 0;
-
 	return result;
 }
-void DungeonGeneratorClass::GetNodeByIndexFromList(int index, PathFindingNode* node, std::deque<PathFindingNode*>* list)
+void DungeonGeneratorClass::GetNodeByIndexFromList(int index, PathFindingNode* &node, std::deque<PathFindingNode*>* list)
 {
 	//push null as pointer for the end
 	list->push_back(0);
@@ -495,15 +526,15 @@ void DungeonGeneratorClass::GetNodeByIndexFromList(int index, PathFindingNode* n
 	while(tmp)
 	{
 		list->push_back(tmp);
-		if(node->index == index)
+		if(tmp->index == index){
 			node = tmp;
+		}
 
 		tmp = list->front();
 		list->pop_front();
 	}
-	
-	delete tmp;
-	tmp = 0;
+
+	return;
 }
 void DungeonGeneratorClass::RemoveNodeFromList(int index, std::deque<PathFindingNode*>* list)
 {
@@ -522,9 +553,9 @@ void DungeonGeneratorClass::RemoveNodeFromList(int index, std::deque<PathFinding
 		list->pop_front();
 	}
 
-	delete tmp;
-	tmp = 0;
+	return;
 }
+
 void DungeonGeneratorClass::CalculateHeuristicValue(int startIndex, int endIndex, int& value)
 {
 	value = 1000;
@@ -534,29 +565,7 @@ void DungeonGeneratorClass::CalculateHeuristicValue(int startIndex, int endIndex
 	int rowNumberEnd = endIndex / m_dungeonData->dungeonWidth;
 	int colNumberEnd = endIndex % m_dungeonData->dungeonWidth;
 
-	value = abs(rowNumberEnd - rowNumberStart) * abs(colNumberEnd - colNumberStart);
-}
-
-void DungeonGeneratorClass::GetNodeByListIndex(int index, PathFindingNode* node, std::deque<PathFindingNode*>* list)
-{
-	int i = 0;
-	list->push_back(0);
-
-	PathFindingNode* tmp = new PathFindingNode;
-	tmp = list->front();
-	list->pop_front();
-
-	while(tmp)
-	{
-		list->push_back(tmp);
-		if(i == index)
-			node = tmp;
-
-		tmp = list->front();
-		list->pop_front();
-
-		i++;
-	}
+	value = (abs(rowNumberEnd - rowNumberStart) * abs(rowNumberEnd - rowNumberStart)) + (abs(colNumberEnd - colNumberStart) * abs(colNumberEnd - colNumberStart));
 }
 
 //heap sort a vector list
@@ -568,24 +577,29 @@ void DungeonGeneratorClass::SortList(std::deque<PathFindingNode*>* list)
 	}
 
 	for (int i = 0; i < (int)list->size(); i++) {
+		PathFindingNode* tmp;
 
 		if(i == 0){
-			PathFindingNode* tmp = list->at(0);
+			tmp = list->at(0);
 			list->at(0) = list->at(list->size()-1-i);
 			list->at(list->size()-1-i) = tmp;
 		}else{
-			PathFindingNode* tmp = list->at(0);
+			tmp = list->at(0);
 			list->at(0) = list->at(list->size()-i);
 			list->at(list->size()-i) = tmp;
 		}
 
+		tmp = 0;
+
 		HeapSink(list, 0, list->size()-1-i);
 	}
+	
+		
 }
 void DungeonGeneratorClass::HeapSink(std::deque<PathFindingNode*>* list, int i, int n)
 {
-	PathFindingNode* tmp1 = new PathFindingNode;
-	PathFindingNode* tmp2 = new PathFindingNode;
+	PathFindingNode* tmp1;
+	PathFindingNode* tmp2;
 
 	int lc = 2 * i;
 	if (lc > n)
@@ -606,12 +620,16 @@ void DungeonGeneratorClass::HeapSink(std::deque<PathFindingNode*>* list, int i, 
 
 	tmp1 = list->at(i);
 	tmp2 = list->at(mc);
+
 	if ((tmp1->costSoFar + tmp1->estimatedCosts) >= (tmp2->costSoFar + tmp2->estimatedCosts))
 		return;
 
 	//swap
 	list->at(i) = list->at(mc);
 	list->at(mc) = tmp1;
+
+	tmp1 = 0;
+	tmp2 = 0;
 
 	HeapSink (list, mc, n);
 }
@@ -624,50 +642,79 @@ int DungeonGeneratorClass::GetConnectedIndex(int startIndex, int direction)
 	int colNumber = startIndex % m_dungeonData->dungeonWidth;
 
 	//north
-	if(direction == 0 && rowNumber != 0)
+	if(direction == 0 && rowNumber > 1)
 		result = startIndex - m_dungeonData->dungeonWidth;
 	
-	//north east
-	else if(direction == 1 && rowNumber != 0 && colNumber != (m_dungeonData->dungeonWidth - 1))
-		result = startIndex - m_dungeonData->dungeonWidth + 1;
-
 	//east
-	else if(direction == 2 && colNumber != (m_dungeonData->dungeonWidth - 1))
+	else if(direction == 1 && colNumber < (m_dungeonData->dungeonWidth - 2))
 		result = startIndex + 1;
 
-	//south east
-	else if(direction == 3 && rowNumber != (m_dungeonData->dungeonHeight - 1) && colNumber != (m_dungeonData->dungeonWidth - 1))
-		result = startIndex + m_dungeonData->dungeonWidth + 1;
-
 	//south
-	else if(direction == 4 && rowNumber != (m_dungeonData->dungeonHeight - 1))
+	else if(direction == 2 && rowNumber < (m_dungeonData->dungeonHeight - 2))
 		result = startIndex + m_dungeonData->dungeonWidth;
 
-	//south west
-	else if(direction == 5 && rowNumber != (m_dungeonData->dungeonHeight - 1) && colNumber != 0)
-		result = startIndex + m_dungeonData->dungeonWidth - 1;
-
 	//west
-	else if(direction == 6 && colNumber != 0)
+	else if(direction == 3 && colNumber > 1)
 		result = startIndex - 1;
 
-	//north west
-	else if(direction == 7 && rowNumber != 0 && colNumber != 0)
-		result = startIndex - m_dungeonData->dungeonWidth - 1;
-
-
+	//tiles who are already floor are not valid
+	/*if(result != -1)
+		if(m_dungeonData->dungeonArray[result] < DUNGEON_WALLHEIGHT - 1)
+			result = -1;
+			*/
 	return result;
 }
 
-/*void DungeonGeneratorClass::TempDrawArea(int areaWidth, int areaHeight, int startIndex, int quarterIndex)
+void DungeonGeneratorClass::CarvePathPoint(int index)
 {
-	if(quarterIndex == 0 || quarterIndex == 1){
-		for(int i = 0; i < areaHeight; i++)
+	m_dungeonData->dungeonArray[index] = 0;
+	
+	int startColIndex = index - (DUNGEON_MIN_PATHWIDTH / 2);
+	int cellIndex = 0;
+	for(int i = 0; i < DUNGEON_MIN_PATHWIDTH; i++)
+	{
+		cellIndex = startColIndex + (i * m_dungeonData->dungeonWidth);
+		for(int j = 0; j < DUNGEON_MIN_PATHWIDTH; j++)
 		{
-			for(int j = 0; j < areaWidth; j++)
-			{
-				m_dungeonData->dungeonArray[(startIndex + j) + (i * m_dungeonData->dungeonWidth)] = 0;
-			}
+			m_dungeonData->dungeonArray[cellIndex] = 0;
+			cellIndex++;
 		}
 	}
-}*/
+}
+
+void DungeonGeneratorClass::GetSpawningCoord(float& xPos, float& yPos, float& zPos)
+{
+	xPos = (m_roomData[0]->topLeftIndex % m_dungeonData->dungeonWidth) + (m_roomData[0]->width * 0.5f);
+	zPos = (m_roomData[0]->topLeftIndex / m_dungeonData->dungeonWidth) + (m_roomData[0]->length * 0.5f);
+	yPos = 0.0f;
+}
+
+
+bool DungeonGeneratorClass::SpawnCollectibles(RoomData* room, D3DClass* d3d)
+{
+	float posX = 0.0f, posZ = 0.0f;
+	float widthPartition = (float)(room->width / COLLECTIBLES_PER_ROOM);
+	bool result = false;
+
+	for(int i = 0; i < COLLECTIBLES_PER_ROOM; i++)
+	{
+		//get random position in room (x: start column + random (width - minDistanceToWall * 2)
+		posX = (room->topLeftIndex % m_dungeonData->dungeonWidth) + (rand() % (int)(((widthPartition * i) - 2) * 100)) * 0.01f;
+		//(z:
+		posZ = (room->topLeftIndex / m_dungeonData->dungeonWidth) + (rand() % (int)((room->length - 2) * 100)) * 0.01f;
+
+
+		ModelClass* testModel = new ModelClass;
+		result = testModel->Initialize(d3d->GetDevice(), "../Engine/data/sphere.txt", L"../Engine/data/stone01.dds");
+		if(!result)
+			return false;
+		testModel->SetPosition(posX, 1.0f, posZ);
+
+		DungeonGeneratorClass::CollectibleData* testObject = new DungeonGeneratorClass::CollectibleData;
+		testObject->model = testModel;
+
+		m_dungeonData->collectibles->push_back(testObject);
+	}
+
+	return true;
+}

@@ -13,18 +13,16 @@ CameraClass::CameraClass()
 	m_rotationX = 0.0f;
 	m_rotationY = 0.0f;
 	m_rotationZ = 0.0f;
+
+	m_yOffset = 0.0f;
 }
-
-
 CameraClass::CameraClass(const CameraClass& other)
 {
 }
 
-
 CameraClass::~CameraClass()
 {
 }
-
 
 void CameraClass::SetPosition(float x, float y, float z)
 {
@@ -33,7 +31,6 @@ void CameraClass::SetPosition(float x, float y, float z)
 	m_positionZ = z;
 	return;
 }
-
 
 void CameraClass::SetRotation(float x, float y, float z)
 {
@@ -48,7 +45,6 @@ D3DXVECTOR3 CameraClass::GetPosition()
 {
 	return D3DXVECTOR3(m_positionX, m_positionY, m_positionZ);
 }
-
 
 D3DXVECTOR3 CameraClass::GetRotation()
 {
@@ -99,9 +95,17 @@ void CameraClass::Render()
 	return;
 }
 
-
 void CameraClass::GetViewMatrix(D3DXMATRIX& viewMatrix)
 {
 	viewMatrix = m_viewMatrix;
 	return;
+}
+
+void CameraClass::SetYOffset(float newValue)
+{
+	m_yOffset = newValue;
+}
+float CameraClass::GetYOffset()
+{
+	return m_yOffset;
 }

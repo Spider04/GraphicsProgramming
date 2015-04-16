@@ -20,6 +20,7 @@ public:
 
 	bool Initialize(ID3D11Device*, char*, WCHAR*);
 	bool Initialize(ID3D11Device*, DungeonGeneratorClass::DungeonData*, WCHAR*);
+	bool LoadDungeonData(DungeonGeneratorClass::DungeonData*);
 	void Shutdown();
 
 	ID3D11ShaderResourceView* GetTexture();

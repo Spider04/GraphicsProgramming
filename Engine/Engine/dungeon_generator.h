@@ -5,21 +5,39 @@
 #include <stdlib.h>
 #include <time.h>
 #include <deque>
+#include "modelclass.h"
+#include "d3dclass.h"
 
 const int ROOM_MINWIDTH_DIV = 5;
 const int ROOM_MINHEIGHT_DIV = 5;
 const int BORDER_MINDISTANCE = 20;
 const int DUNGEON_ROOMS = 4;
 
+const int DUNGEON_MIN_PATHWIDTH = 10;
+const int DUNGEON_WALLHEIGHT = 150;
+const int COLLECTIBLES_PER_ROOM = 2;
 
 class DungeonGeneratorClass
 {
 public:
+	
+	struct CollectibleData
+	{
+		ModelClass* model;
+		float posX;
+		float posY;
+		float posZ;
+
+		float collisionRadius;
+	};
+
 	struct DungeonData
 	{
 		int* dungeonArray;
 		int dungeonWidth;
 		int dungeonHeight;
+
+		std::deque<CollectibleData*> *collectibles;
 	};
 
 
@@ -33,7 +51,8 @@ public:
 	DungeonData* GetDungeonData();
 	unsigned int GetDungeonSeed();
 
-	bool GenerateNewDungeon(int);
+	bool GenerateNewDungeon(int, D3DClass*);
+	void GetSpawningCoord(float&, float&, float&);
 	
 
 private:
@@ -62,7 +81,7 @@ private:
 	void SetRoomExit(RoomData*, int);
 
 	void ConnectTwoRooms(RoomData*, RoomData*);
-	bool CreatePathBetweenPoints(int, int, int);
+	bool CreatePathBetweenPoints(int, int);
 	void CalculateHeuristicValue(int, int, int&);
 
 	//for pathfinding - node structure and open and close list
@@ -75,13 +94,16 @@ private:
 
 	int GetConnectedIndex(int, int);
 	bool IsInList(int, std::deque<PathFindingNode*>*);
-	void GetNodeByIndexFromList(int, PathFindingNode*, std::deque<PathFindingNode*>*);
+	void GetNodeByIndexFromList(int, PathFindingNode*&, std::deque<PathFindingNode*>*);
 	void RemoveNodeFromList(int, std::deque<PathFindingNode*>*);
-
-	void GetNodeByListIndex(int, PathFindingNode*, std::deque<PathFindingNode*>*);
 
 	void SortList(std::deque<PathFindingNode*>*);
 	void HeapSink(std::deque<PathFindingNode*>*, int, int);
+
+
+	void CarvePathPoint(int);
+	bool SpawnCollectibles(RoomData*, D3DClass*);
+
 
 	//void TempDrawArea(int, int, int, int);
 

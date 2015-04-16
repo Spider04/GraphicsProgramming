@@ -8,7 +8,7 @@
 /////////////
 // GLOBALS //
 /////////////
-const bool FULL_SCREEN = false;
+const bool FULL_SCREEN = true;
 const bool VSYNC_ENABLED = true;
 
 const float SCREEN_DEPTH = 1000.0f;
@@ -55,8 +55,10 @@ public:
 	bool Frame();
 
 private:
-	bool HandleInput(float);
+	bool HandleInput();
 	bool RenderGraphics();
+
+	void HandleWallCollision(float&, float&, float&, float, float, float);
 
 private:
 	InputClass* m_Input;
@@ -77,6 +79,7 @@ private:
 	FrustumClass* m_Frustum;
 	QuadTreeClass* m_QuadTree;
 	DungeonGeneratorClass* m_DungeonGenerator;
+	bool dungeonRecentlyCreated;
 };
 
 #endif

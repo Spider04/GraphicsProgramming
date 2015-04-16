@@ -13,6 +13,9 @@ public:
 	void SetPosition(float, float, float);
 	void SetRotation(float, float, float);
 
+	void SetYOffset(float);
+	float GetYOffset();
+
 	D3DXVECTOR3 GetPosition();
 	D3DXVECTOR3 GetRotation();
 
@@ -23,6 +26,8 @@ private:
 	float m_positionX, m_positionY, m_positionZ;
 	float m_rotationX, m_rotationY, m_rotationZ;
 	D3DXMATRIX m_viewMatrix;
+
+	float m_yOffset;
 };
 
 #endif

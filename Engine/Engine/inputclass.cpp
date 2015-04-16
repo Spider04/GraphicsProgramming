@@ -261,3 +261,19 @@ bool InputClass::IsPgDownPressed()
 
 	return false;
 }
+
+bool InputClass::IsSpacebarPressed()
+{
+	if(m_keyboardState[DIK_SPACE] & 0x80)
+		return true;
+
+	return false;
+}
+
+bool InputClass::IsPPressed()
+{
+	if(m_keyboardState[DIK_P] & 0x80)
+		return true;
+
+	return false;
+}

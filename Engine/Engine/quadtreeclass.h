@@ -8,6 +8,7 @@ const int MAX_TRIANGLES = 10000;
 #include "terrainclass.h"
 #include "frustumclass.h"
 #include "terrainshaderclass.h"
+#include "dungeon_generator.h"
 
 class QuadTreeClass
 {
@@ -16,7 +17,7 @@ public:
 	QuadTreeClass(const QuadTreeClass&);
 	~QuadTreeClass();
 
-	bool Initialize(TerrainClass*, ID3D11Device*);
+	bool Initialize(TerrainClass*, ID3D11Device*, DungeonGeneratorClass::DungeonData*);
 	void Shutdown();
 	void Render(FrustumClass*, ID3D11DeviceContext*, TerrainShaderClass*);
 
@@ -65,6 +66,8 @@ private:
 	int m_triangleCount, m_drawCount;
 	VertexType* m_vertexList;
 	NodeType* m_parentNode; //root node
+
+	DungeonGeneratorClass::DungeonData* m_dungeonData;
 };
 
 #endif

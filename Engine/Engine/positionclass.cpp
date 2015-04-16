@@ -20,6 +20,20 @@ PositionClass::PositionClass()
 	m_rightTurnSpeed = 0.0f;
 	m_lookUpSpeed    = 0.0f;
 	m_lookDownSpeed  = 0.0f;
+
+	m_collisionRadius = 0.0f;
+	m_allowedUpwardDifference = 0.0f;
+	m_gravityForce = 30.0f;
+
+	m_jumpForce = 0.0f;
+	m_jumpSpeed = -1.0f;
+	m_jumpSpeedMax = 10.0f;
+
+	m_fallSpeed = 0.0f;
+	m_fallSpeedMax = 100.0f;
+	m_mass = 1.0f;
+	m_inJump = false;
+	m_jumpPeakReached = false;
 }
 PositionClass::PositionClass(const PositionClass& other)
 {
@@ -61,10 +75,39 @@ void PositionClass::GetRotation(float& x, float& y, float& z)
 	return;
 }
 
-void PositionClass::SetFrameTime(float time)
+void PositionClass::Frame(float time, float floorHeight, bool onMesh)
 {
 	m_frameTime = time;
-	return;
+
+	if(onMesh)
+	{
+		//jump if necessary
+		if(m_inJump && m_jumpSpeed > 0.0f)
+		{
+			m_jumpSpeed -= m_gravityForce * m_mass * time * 0.001f;
+			if(m_jumpSpeed > 0.0f)
+				m_positionY += m_jumpSpeed * time * 0.001f;
+			else
+				m_jumpSpeed = -1.0f;
+		}
+		else if(m_positionY > (floorHeight + 0.01f))
+		{
+			//drag the character down
+			if(m_fallSpeed < m_fallSpeedMax)
+				m_fallSpeed += m_gravityForce * m_mass * time * 0.001f;
+
+			m_positionY -= m_fallSpeed * time * 0.001f;
+
+			if(m_positionY < (floorHeight + 0.01f)){
+				m_positionY = floorHeight;
+				m_fallSpeed = 0.0f;
+				m_inJump = false;
+			}
+		}
+
+	}else if (m_fallSpeed > 0.0f)
+		m_fallSpeed = 0.0f;
+		
 }
 
 
@@ -285,4 +328,41 @@ void PositionClass::LookDownward(bool keydown)
 		m_rotationX = -90.0f;
 
 	return;
+}
+
+
+void PositionClass::SetCollisionRadius(float newValue)
+{
+	m_collisionRadius = newValue;
+}
+void PositionClass::GetCollisionRadius(float& value)
+{
+	value = m_collisionRadius;
+}
+
+void PositionClass::SetAllowedUpwardDifference(float newValue)
+{
+	m_allowedUpwardDifference = newValue;
+}
+void PositionClass::GetAllowedUpwardDifference(float& value)
+{
+	value = m_allowedUpwardDifference;
+}
+
+
+void PositionClass::SetGravityForce(float value)
+{
+	m_gravityForce = value;
+}
+void PositionClass::SetJumpForce(float value)
+{
+	m_jumpForce = value;
+}
+
+void PositionClass::Jump()
+{
+	if(!m_inJump){
+		m_inJump = true;
+		m_jumpSpeed = m_jumpSpeedMax;
+	}
 }

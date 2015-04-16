@@ -3,6 +3,7 @@
 QuadTreeClass::QuadTreeClass()
 	: m_vertexList(0)
 	, m_parentNode(0)
+	, m_dungeonData(0)
 {}
 QuadTreeClass::QuadTreeClass(const QuadTreeClass& other)
 {}
@@ -10,7 +11,7 @@ QuadTreeClass::QuadTreeClass(const QuadTreeClass& other)
 QuadTreeClass::~QuadTreeClass()
 {}
 
-bool QuadTreeClass::Initialize(TerrainClass* terrain, ID3D11Device* device)
+bool QuadTreeClass::Initialize(TerrainClass* terrain, ID3D11Device* device, DungeonGeneratorClass::DungeonData* dungeonData)
 {
 	//get number of vertices and the total triangle count from the terrain vertex array
 	int vertexCount;
@@ -24,6 +25,8 @@ bool QuadTreeClass::Initialize(TerrainClass* terrain, ID3D11Device* device)
 	//copy terrain vertices into vertex list
 	terrain->CopyVertexArray((void*)m_vertexList);
 
+	//get pointer to dungeon data to render objects within dungeon
+	m_dungeonData = dungeonData;
 
 	//get center coordinate (2D) and width of mesh
 	float centerX = 0.0f, centerZ = 0.0f, width = 0.0f;
@@ -56,6 +59,7 @@ void QuadTreeClass::Shutdown()
 		delete m_parentNode;
 		m_parentNode = 0;
 	}
+	m_dungeonData = 0;
 
 	return;
 }
@@ -450,6 +454,30 @@ void QuadTreeClass::RenderNode(NodeType* node, FrustumClass* frustum, ID3D11Devi
 
 	shader->RenderShader(deviceContext, indexCount);
 	m_drawCount += node->triangleCount;
+
+	//draw the models that are within the node
+	/*std::deque<ModelClass*> *modelList = m_dungeonData->collectibles;
+	ModelClass* currentModel;
+
+	float posX, posY, posZ;
+	if(modelList)
+	{
+		modelList->push_back(0);
+		currentModel = modelList->front();
+		modelList->pop_front();
+
+		while(currentModel)
+		{
+			modelList->push_back(currentModel);
+			currentModel->GetPosition(posX, posY, posZ);
+
+			if(frustum->CheckCube(posX, posY, posZ, 1.0f))
+				currentModel->Render(deviceContext);
+
+			currentModel = modelList->front();
+			modelList->pop_front();
+		}
+	}*/
 
 	return;
 }

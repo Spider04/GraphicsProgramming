@@ -24,6 +24,7 @@ ApplicationClass::ApplicationClass()
 	m_QuadTree = 0;
 
 	m_DungeonGenerator = 0;
+	dungeonRecentlyCreated = false;
 }
 ApplicationClass::ApplicationClass(const ApplicationClass& other)
 {
@@ -49,7 +50,6 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
-	float cameraX, cameraY, cameraZ;
 	D3DXMATRIX baseViewMatrix;
 	char videoCard[128];
 	int videoMemory;
@@ -85,6 +85,14 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
+	//create a new dungeon
+	result = m_DungeonGenerator->GenerateNewDungeon(DUNGEON_ROOMS, m_Direct3D);
+	if(!result)
+	{
+		MessageBox(hwnd, L"Could not create a new dungeon.", L"Error", MB_OK);
+		return false;
+	}
+
 	// Create the camera object.
 	m_Camera = new CameraClass;
 	if(!m_Camera)
@@ -98,11 +106,15 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	m_Camera->GetViewMatrix(baseViewMatrix);
 
 	// Set the initial position of the camera.
-	cameraX = 50.0f;
-	cameraY = 2.0f;
-	cameraZ = 50.0f;
+	float cameraX, cameraY, cameraZ;
+	float cameraOffset = 2.0f;
+	m_DungeonGenerator->GetSpawningCoord(cameraX, cameraY, cameraZ);
+	//cameraX = 50.0f;
+	cameraY += cameraOffset;
+	//cameraZ = 50.0f;
 
 	m_Camera->SetPosition(cameraX, cameraY, cameraZ);
+	m_Camera->SetYOffset(cameraOffset);
 
 	// Create the terrain object.
 	m_Terrain = new TerrainClass;
@@ -143,7 +155,9 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	}
 
 	// Set the initial position of the viewer to the same as the initial camera position.
-	m_Position->SetPosition(cameraX, cameraY, cameraZ);
+	m_Position->SetPosition(cameraX, cameraY - m_Camera->GetYOffset(), cameraZ);
+	m_Position->SetCollisionRadius(1.0f);
+	m_Position->SetAllowedUpwardDifference(0.1f);
 
 	// Create the fps object.
 	m_Fps = new FpsClass;
@@ -228,7 +242,6 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetDirection(-0.5f, -1.0f, 0.0f);
 
-
 	//init frustum object
 	m_Frustum = new FrustumClass;
 	if(!m_Frustum)
@@ -239,7 +252,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	if(!m_QuadTree)
 		return false;
 
-	result = m_QuadTree->Initialize(m_Terrain, m_Direct3D->GetDevice());
+	result = m_QuadTree->Initialize(m_Terrain, m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData());
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the quad tree object.", L"Error", MB_OK);
@@ -377,7 +390,6 @@ bool ApplicationClass::Frame()
 {
 	bool result;
 
-
 	// Read the user input.
 	result = m_Input->Frame();
 	if(!result)
@@ -410,58 +422,80 @@ bool ApplicationClass::Frame()
 		return false;
 	}
 
-	// Do the frame input processing.
-	result = HandleInput(m_Timer->GetTime());
-	if(!result)
-	{
-		return false;
-	}
-	
-	//---- get position of camera and height underneath it - set camera two units above
-	//get current position of camera
-	/*D3DXVECTOR3 position;
-	position = m_Camera->GetPosition();
+	//record old position
+	float posX, posY, posZ;
+	m_Position->GetPosition(posX, posY, posZ);
 
-	//get height of triangle underneath, if camera is over mesh
-	float height = 0.0f;
 	bool foundHeight = false;
+	foundHeight = m_QuadTree->GetHeightAtPosition(posX, posZ, posY);
+	
+	// Set the frame time for calculating the updated position.
+	// and calculate physics
+	m_Position->Frame(m_Timer->GetTime(), posY, foundHeight);
 
-	foundHeight = m_QuadTree->GetHeightAtPosition(position.x, position.z, height);
+	//record position after physics are calulated
+	m_Position->GetPosition(posX, posY, posZ);
+
+	// Do the frame input processing.
+	result = HandleInput();
+	if(!result)
+		return false;
+
+	float newX = 0.0f, newY = 0.0f, newZ = 0.0f;
+	m_Position->GetPosition(newX, newY, newZ);
+	HandleWallCollision(newX, newY, newZ, posX, posY, posZ);
+	m_Position->SetPosition(newX, newY, newZ);
+	
+	//---- get position and set it to the correct one for the terrain
+	//get height of triangle underneath, if camera is over mesh
+	//bool foundHeight = false;
+
+	/*foundHeight = m_QuadTree->GetHeightAtPosition(newX, newZ, newY);
 	if(foundHeight)
-		m_Camera->SetPosition(position.x, height + 2.0f, position.z);
-	*/
+		m_Position->SetPosition(newX, newY, newZ);
+		*/
+	// Get the view point position/rotation.
+	float rotX, rotY, rotZ;
+	m_Position->GetRotation(rotX, rotY, rotZ);
+
+	// Set the position of the camera.
+	m_Camera->SetPosition(newX, newY + m_Camera->GetYOffset(), newZ);
+	m_Camera->SetRotation(rotX, rotY, rotZ);
+
+	// Update the position values in the text object.
+	result = m_Text->SetCameraPosition(posX, posY, posZ, m_Direct3D->GetDeviceContext());
+	if(!result)
+		return false;
+
+	// Update the rotation values in the text object.
+	result = m_Text->SetCameraRotation(rotX, rotY, rotZ, m_Direct3D->GetDeviceContext());
+	if(!result)
+		return false;
 
 	// Render the graphics.
 	result = RenderGraphics();
 	if(!result)
-	{
 		return false;
-	}
 
 	return result;
 }
 
-bool ApplicationClass::HandleInput(float frameTime)
+bool ApplicationClass::HandleInput()
 {
-	bool keyDown, result;
-	float posX, posY, posZ, rotX, rotY, rotZ;
-
-
-	// Set the frame time for calculating the updated position.
-	m_Position->SetFrameTime(frameTime);
+	bool keyDown;
 
 	// Handle the input.
-	keyDown = m_Input->IsLeftPressed();
-	m_Position->TurnLeft(keyDown);
-
-	keyDown = m_Input->IsRightPressed();
-	m_Position->TurnRight(keyDown);
-
 	keyDown = m_Input->IsUpPressed();
 	m_Position->MoveForward(keyDown);
-
+	
+	keyDown = m_Input->IsRightPressed();
+	m_Position->TurnRight(keyDown);
+	
 	keyDown = m_Input->IsDownPressed();
 	m_Position->MoveBackward(keyDown);
+	
+	keyDown = m_Input->IsLeftPressed();
+	m_Position->TurnLeft(keyDown);
 
 	keyDown = m_Input->IsAPressed();
 	m_Position->MoveUpward(keyDown);
@@ -474,28 +508,42 @@ bool ApplicationClass::HandleInput(float frameTime)
 
 	keyDown = m_Input->IsPgDownPressed();
 	m_Position->LookDownward(keyDown);
-	
-	// Get the view point position/rotation.
-	m_Position->GetPosition(posX, posY, posZ);
-	m_Position->GetRotation(rotX, rotY, rotZ);
 
-	// Set the position of the camera.
-	m_Camera->SetPosition(posX, posY, posZ);
-	m_Camera->SetRotation(rotX, rotY, rotZ);
+	keyDown = m_Input->IsSpacebarPressed();
+	if(keyDown)
+		m_Position->Jump();
 
-	// Update the position values in the text object.
-	result = m_Text->SetCameraPosition(posX, posY, posZ, m_Direct3D->GetDeviceContext());
-	if(!result)
+	//creating a new dungeon
+	keyDown = m_Input->IsPPressed();
+	if(keyDown && !dungeonRecentlyCreated)
 	{
-		return false;
-	}
+		//create new dungeon
+		m_DungeonGenerator->GenerateNewDungeon(DUNGEON_ROOMS, m_Direct3D);
 
-	// Update the rotation values in the text object.
-	result = m_Text->SetCameraRotation(rotX, rotY, rotZ, m_Direct3D->GetDeviceContext());
-	if(!result)
-	{
-		return false;
+		m_Terrain->Shutdown();
+		bool result = m_Terrain->Initialize(m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData(), L"../Engine/data/dirt01.dds");
+		if(!result)
+			return false;
+
+		m_QuadTree->Shutdown();
+		result = m_QuadTree->Initialize(m_Terrain, m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData());
+		if(!result)
+			return false;
+
+		dungeonRecentlyCreated = true;
+
+		//set seed text for this dungeon
+		result = m_Text->SetDungeonRandSeed(m_DungeonGenerator->GetDungeonSeed(), m_Direct3D->GetDeviceContext());
+		if(!result)
+			return false;
+
+		float posX, posY, posZ;
+		m_DungeonGenerator->GetSpawningCoord(posX, posY, posZ);
+		m_Position->SetPosition(posX, posY, posZ);
+		m_Camera->SetPosition(posX, posY + m_Camera->GetYOffset(), posZ);
 	}
+	else if(!keyDown && dungeonRecentlyCreated)
+		dungeonRecentlyCreated = false;
 
 	return true;
 }
@@ -515,19 +563,54 @@ bool ApplicationClass::RenderGraphics()
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Direct3D->GetOrthoMatrix(orthoMatrix);
 
+	bool result = false;
+
+	//render all collectibles (for now, regardless of visibility)
+	std::deque<DungeonGeneratorClass::CollectibleData*> *modelList = m_DungeonGenerator->GetDungeonData()->collectibles;
+	DungeonGeneratorClass::CollectibleData* currentModel;
+	float posX, posY, posZ;
+
+	if(modelList)
+	{
+		modelList->push_back(0);
+		currentModel = modelList->front();
+
+		modelList->pop_front();
+		m_Direct3D->GetWorldMatrix(worldMatrix);
+
+		while(currentModel)
+		{
+			currentModel->model->GetPosition(posX, posY, posZ);
+			D3DXMatrixTranslation(&worldMatrix, posX, posY, posZ);
+
+			result = m_TerrainShader->SetShaderParameters(m_Direct3D->GetDeviceContext(), worldMatrix, viewMatrix, projectionMatrix,
+				m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection(), m_Terrain->GetTexture());
+
+			if(!result)
+				return false;
+
+			currentModel->model->Render(m_Direct3D->GetDeviceContext());
+			m_TerrainShader->RenderShader(m_Direct3D->GetDeviceContext(), currentModel->model->GetIndexCount());
+
+			modelList->push_back(currentModel);
+			currentModel = modelList->front();
+			modelList->pop_front();
+		}
+	}
+
+	D3DXMatrixTranslation(&worldMatrix, 0.0f, 0.0f, 0.0f);
 
 	//construct frustum based on view and projection matrix
 	m_Frustum->ConstructFrustum(SCREEN_DEPTH, projectionMatrix, viewMatrix);
 
 	//set terrain shader parameters before rendering the nodes
-	bool result;
 	result = m_TerrainShader->SetShaderParameters(m_Direct3D->GetDeviceContext(), worldMatrix, viewMatrix, projectionMatrix,
 		m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection(), m_Terrain->GetTexture());
 
 	if(!result)
 		return false;
 
-	//render all visible nodes (frstum object for culling, terrain shader for drawing
+	//render all visible nodes (frustum object for culling, terrain shader for drawing
 	m_QuadTree->Render(m_Frustum, m_Direct3D->GetDeviceContext(), m_TerrainShader);
 
 	//set number of drawn triangles
@@ -557,4 +640,51 @@ bool ApplicationClass::RenderGraphics()
 	m_Direct3D->EndScene();
 
 	return true;
+}
+
+void ApplicationClass::HandleWallCollision(float& posX, float& posY, float& posZ, float oldX, float oldY, float oldZ)
+{
+	float collisionRadius = 0.0f;
+	m_Position->GetCollisionRadius(collisionRadius);
+	float allowedUpwardsDifference = 0.0f;
+	m_Position->GetAllowedUpwardDifference(allowedUpwardsDifference);
+
+	//check if position has clipped with wall - check this with the collision radius in all 4 corners
+	bool clipWithWall = false;
+	for(int i = 0; i < 4; i++)
+	{
+		float tmpX = posX;
+		float tmpZ = posZ;
+		float height = 0.0f;
+
+		if(i == 0)
+			tmpX += collisionRadius;
+		else if(i == 1)
+			tmpX -= collisionRadius;
+		else if(i == 2)
+			tmpZ += collisionRadius;
+		else
+			tmpZ -= collisionRadius;
+
+		bool foundHeight = m_QuadTree->GetHeightAtPosition(tmpX, tmpZ, height);
+		if(foundHeight)
+		{
+			if(height > (oldY + allowedUpwardsDifference))
+				clipWithWall = true;
+		}
+		//outside of mesh = world wall
+		else
+			clipWithWall = true;
+
+		if(clipWithWall)
+			break;
+	}
+
+	//in case of collision with wall -> set position back to the old one
+	if(clipWithWall){
+		posX = oldX;
+		posY = oldY;
+		posZ = oldZ;
+		//m_Position->SetPosition(x, y, z);
+	}
 }

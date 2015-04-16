@@ -43,7 +43,7 @@ bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::Dunge
 {
 	//load height map for the terrain
 	bool result;
-	result = LoadHeightMap(dungeonArray);
+	result = LoadDungeonData(dungeonArray);
 	if(!result)
 		return false;
 
@@ -63,6 +63,14 @@ bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::Dunge
 
 	// Initialize vertex array that will hold the geometry
 	result = InitializeBuffers(device);
+	return result;
+}
+
+bool TerrainClass::LoadDungeonData(DungeonGeneratorClass::DungeonData* dungeonArray)
+{
+	bool result;
+	result = LoadHeightMap(dungeonArray);
+	
 	return result;
 }
 
