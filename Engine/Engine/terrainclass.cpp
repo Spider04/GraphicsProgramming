@@ -3,7 +3,9 @@
 
 TerrainClass::TerrainClass()
 	: m_heightMap(0)
-	, m_Texture(0)
+	, m_floorTexture(0)
+	, m_wallTexture(0)
+	, m_sphereTexture(0)
 	, m_vertices(0)
 {}
 TerrainClass::TerrainClass(const TerrainClass& other)
@@ -12,7 +14,7 @@ TerrainClass::TerrainClass(const TerrainClass& other)
 TerrainClass::~TerrainClass()
 {}
 
-bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename, WCHAR* textureFilename)
+bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename, WCHAR* floorTextureFilename, WCHAR* wallTextureFilename, WCHAR* sphereTextureFilename)
 {
 	//load height map for the terrain
 	bool result;
@@ -30,7 +32,7 @@ bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename, WCH
 
 	//calculate texture coordinates and load texture
 	CalculateTextureCoordinates();
-	result = LoadTexture(device, textureFilename);
+	result = LoadTextures(device, floorTextureFilename, wallTextureFilename, sphereTextureFilename);
 	if(!result)
 		return false;
 
@@ -39,7 +41,7 @@ bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename, WCH
 	return result;
 }
 
-bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::DungeonData* dungeonArray, WCHAR* textureFilename)
+bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::DungeonData* dungeonArray, WCHAR* floorTextureFilename, WCHAR* wallTextureFilename, WCHAR* sphereTextureFilename)
 {
 	//load height map for the terrain
 	bool result;
@@ -57,7 +59,7 @@ bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::Dunge
 
 	//calculate texture coordinates and load texture
 	CalculateTextureCoordinates();
-	result = LoadTexture(device, textureFilename);
+	result = LoadTextures(device, floorTextureFilename, wallTextureFilename, sphereTextureFilename);
 	if(!result)
 		return false;
 
@@ -76,8 +78,8 @@ bool TerrainClass::LoadDungeonData(DungeonGeneratorClass::DungeonData* dungeonAr
 
 void TerrainClass::Shutdown()
 {
-	//release texture
-	ReleaseTexture();
+	//release textures
+	ReleaseTextures();
 
 	// Release vertex array
 	ShutdownBuffers();
@@ -89,9 +91,17 @@ void TerrainClass::Shutdown()
 }
 
 
-ID3D11ShaderResourceView* TerrainClass::GetTexture()
+ID3D11ShaderResourceView* TerrainClass::GetFloorTexture()
 {
-	return m_Texture->GetTexture();
+	return m_floorTexture->GetTexture();
+}
+ID3D11ShaderResourceView* TerrainClass::GetWallTexture()
+{
+	return m_wallTexture->GetTexture();
+}
+ID3D11ShaderResourceView* TerrainClass::GetSphereTexture()
+{
+	return m_sphereTexture->GetTexture();
 }
 
 int TerrainClass::GetVertexCount()
@@ -433,24 +443,59 @@ void TerrainClass::CalculateTextureCoordinates()
 }
 
 //load texture resource into texture object
-bool TerrainClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
+bool TerrainClass::LoadTextures(ID3D11Device* device, WCHAR* floorFilename, WCHAR* wallFilename, WCHAR* sphereFilename)
 {
-	m_Texture = new TextureClass;
-	if(!m_Texture)
+	//load the floor texture
+	m_floorTexture = new TextureClass;
+	if(!m_floorTexture)
 		return false;
 
 	bool result;
-	result = m_Texture->Initialize(device, filename);
+	result = m_floorTexture->Initialize(device, floorFilename);
+	if(!result)
+		return false;
+
+	//load the wall texture
+	m_wallTexture = new TextureClass;
+	if(!m_wallTexture)
+		return false;
+
+	result = m_wallTexture->Initialize(device, wallFilename);
+	if(!result)
+		return false;
+
+	//load the sphere texture
+	m_sphereTexture = new TextureClass;
+	if(!m_sphereTexture)
+		return false;
+
+	result = m_sphereTexture->Initialize(device, sphereFilename);
+
+
 	return result;
 }
 
-void TerrainClass::ReleaseTexture()
+void TerrainClass::ReleaseTextures()
 {
-	if(m_Texture)
+	if(m_floorTexture)
 	{
-		m_Texture->Shutdown();
-		delete m_Texture;
-		m_Texture = 0;
+		m_floorTexture->Shutdown();
+		delete m_floorTexture;
+		m_floorTexture = 0;
+	}
+
+	if(m_wallTexture)
+	{
+		m_wallTexture->Shutdown();
+		delete m_wallTexture;
+		m_wallTexture = 0;
+	}
+
+	if(m_sphereTexture)
+	{
+		m_sphereTexture->Shutdown();
+		delete m_sphereTexture;
+		m_sphereTexture = 0;
 	}
 
 	return;

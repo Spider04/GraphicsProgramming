@@ -18,12 +18,16 @@ public:
 	TerrainClass(const TerrainClass&);
 	~TerrainClass();
 
-	bool Initialize(ID3D11Device*, char*, WCHAR*);
-	bool Initialize(ID3D11Device*, DungeonGeneratorClass::DungeonData*, WCHAR*);
+	bool Initialize(ID3D11Device*, char*, WCHAR*, WCHAR*, WCHAR*);
+	bool Initialize(ID3D11Device*, DungeonGeneratorClass::DungeonData*, WCHAR*, WCHAR*, WCHAR*);
 	bool LoadDungeonData(DungeonGeneratorClass::DungeonData*);
 	void Shutdown();
 
-	ID3D11ShaderResourceView* GetTexture();
+	//all textures for the game
+	ID3D11ShaderResourceView* GetFloorTexture();
+	ID3D11ShaderResourceView* GetWallTexture();
+	ID3D11ShaderResourceView* GetSphereTexture();
+
 	int GetVertexCount();
 	void CopyVertexArray(void*);
 
@@ -55,15 +59,15 @@ private:
 	void ShutdownHeightMap();
 
 	void CalculateTextureCoordinates();
-	bool LoadTexture(ID3D11Device*, WCHAR*);
-	void ReleaseTexture();
+	bool LoadTextures(ID3D11Device*, WCHAR*, WCHAR*, WCHAR*);
+	void ReleaseTextures();
 
 	bool InitializeBuffers(ID3D11Device*);
 	void ShutdownBuffers();
 	
 	int m_terrainWidth, m_terrainHeight;
 	HeightMapType* m_heightMap;
-	TextureClass* m_Texture;
+	TextureClass *m_floorTexture, *m_wallTexture, *m_sphereTexture;
 
 	int m_vertexCount;
 	VertexType* m_vertices;

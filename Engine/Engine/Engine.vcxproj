@@ -86,6 +86,8 @@
     <None Include="shader\color.vs" />
     <None Include="shader\font.ps" />
     <None Include="shader\font.vs" />
+    <None Include="shader\sphere.ps" />
+    <None Include="shader\sphere.vs" />
     <None Include="shader\terrain.ps" />
     <None Include="shader\terrain.vs" />
   </ItemGroup>
@@ -105,6 +107,7 @@
     <ClInclude Include="modelclass.h" />
     <ClInclude Include="positionclass.h" />
     <ClInclude Include="quadtreeclass.h" />
+    <ClInclude Include="sphereshaderclass.h" />
     <ClInclude Include="systemclass.h" />
     <ClInclude Include="terrainclass.h" />
     <ClInclude Include="terrainshaderclass.h" />
@@ -129,6 +132,7 @@
     <ClCompile Include="modelclass.cpp" />
     <ClCompile Include="positionclass.cpp" />
     <ClCompile Include="quadtreeclass.cpp" />
+    <ClCompile Include="sphereshaderclass.cpp" />
     <ClCompile Include="systemclass.cpp" />
     <ClCompile Include="terrainclass.cpp" />
     <ClCompile Include="terrainshaderclass.cpp" />

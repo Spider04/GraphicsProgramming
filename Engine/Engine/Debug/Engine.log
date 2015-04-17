@@ -1,4 +1,4 @@
-﻿Build started 16/04/2015 18:35:30.
+﻿Build started 17/04/2015 13:19:44.
      1>Project "C:\Users\1404272\Downloads\Engine\Engine\Engine.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Debug\Engine.unsuccessfulbuild" because "AlwaysCreate" was specified.
@@ -30,6 +30,7 @@
          Debug\modelclass.obj
          Debug\positionclass.obj
          Debug\quadtreeclass.obj
+         Debug\sphereshaderclass.obj
          Debug\systemclass.obj
          Debug\terrainclass.obj
          Debug\terrainshaderclass.obj
@@ -49,4 +50,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:03.07
+Time Elapsed 00:00:03.02

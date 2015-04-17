@@ -19,12 +19,14 @@ ApplicationClass::ApplicationClass()
 	m_Text = 0;
 
 	m_TerrainShader = 0;
+	m_SphereShader = 0;
 	m_Light = 0;
 	m_Frustum = 0;
 	m_QuadTree = 0;
 
 	m_DungeonGenerator = 0;
-	dungeonRecentlyCreated = false;
+	m_dungeonRecentlyCreated = false;
+	m_pointsCollected = 0;
 }
 ApplicationClass::ApplicationClass(const ApplicationClass& other)
 {
@@ -125,7 +127,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 
 	// Initialize the terrain object.
 	//result = m_Terrain->Initialize(m_Direct3D->GetDevice(), "../Engine/data/heightmap01.bmp", L"../Engine/data/dirt01.dds");
-	result = m_Terrain->Initialize(m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData(), L"../Engine/data/dirt01.dds");
+	result = m_Terrain->Initialize(m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData(), L"../Engine/data/dirt01.dds", L"../Engine/data/rock.dds", L"../Engine/data/red.dds");
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the terrain object.", L"Error", MB_OK);
@@ -233,6 +235,19 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
+	//init sphere shader
+	m_SphereShader = new SphereShaderClass;
+	if(!m_SphereShader)
+		return false;
+
+	result = m_SphereShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if(!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the sphere shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+
 	//init light object
 	m_Light = new LightClass;
 	if(!m_Light)
@@ -265,6 +280,14 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not get dungeon seed.", L"Error", MB_OK);
+		return false;
+	}
+
+	//set point text
+	result = m_Text->SetPoints(m_pointsCollected, m_DungeonGenerator->GetTotalPointCount(), m_Direct3D->GetDeviceContext());
+	if(!result)
+	{
+		MessageBox(hwnd, L"Could not display points.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -304,6 +327,13 @@ void ApplicationClass::Shutdown()
 		m_TerrainShader->Shutdown();
 		delete m_TerrainShader;
 		m_TerrainShader = 0;
+	}
+
+	if(m_SphereShader)
+	{
+		m_SphereShader->Shutdown();
+		delete m_SphereShader;
+		m_SphereShader = 0;
 	}
 
 	// Release the text object.
@@ -441,19 +471,22 @@ bool ApplicationClass::Frame()
 	if(!result)
 		return false;
 
+	//handle collisions with the wall
 	float newX = 0.0f, newY = 0.0f, newZ = 0.0f;
 	m_Position->GetPosition(newX, newY, newZ);
 	HandleWallCollision(newX, newY, newZ, posX, posY, posZ);
 	m_Position->SetPosition(newX, newY, newZ);
 	
-	//---- get position and set it to the correct one for the terrain
-	//get height of triangle underneath, if camera is over mesh
-	//bool foundHeight = false;
-
-	/*foundHeight = m_QuadTree->GetHeightAtPosition(newX, newZ, newY);
-	if(foundHeight)
-		m_Position->SetPosition(newX, newY, newZ);
-		*/
+	//check if a collectible was collected in this frame
+	result = m_DungeonGenerator->CollectibleAtPosition(newX, newY, newZ);
+	if(result)
+	{
+		m_pointsCollected++;
+		result = m_Text->SetPoints(m_pointsCollected, m_DungeonGenerator->GetTotalPointCount(), m_Direct3D->GetDeviceContext());
+		if(!result)
+			return false;
+	}
+	
 	// Get the view point position/rotation.
 	float rotX, rotY, rotZ;
 	m_Position->GetRotation(rotX, rotY, rotZ);
@@ -515,13 +548,13 @@ bool ApplicationClass::HandleInput()
 
 	//creating a new dungeon
 	keyDown = m_Input->IsPPressed();
-	if(keyDown && !dungeonRecentlyCreated)
+	if(keyDown && !m_dungeonRecentlyCreated)
 	{
 		//create new dungeon
 		m_DungeonGenerator->GenerateNewDungeon(DUNGEON_ROOMS, m_Direct3D);
 
 		m_Terrain->Shutdown();
-		bool result = m_Terrain->Initialize(m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData(), L"../Engine/data/dirt01.dds");
+		bool result = m_Terrain->Initialize(m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData(), L"../Engine/data/dirt01.dds", L"../Engine/data/rock.dds", L"../Engine/data/red.dds");
 		if(!result)
 			return false;
 
@@ -530,20 +563,25 @@ bool ApplicationClass::HandleInput()
 		if(!result)
 			return false;
 
-		dungeonRecentlyCreated = true;
+		m_dungeonRecentlyCreated = true;
 
 		//set seed text for this dungeon
 		result = m_Text->SetDungeonRandSeed(m_DungeonGenerator->GetDungeonSeed(), m_Direct3D->GetDeviceContext());
 		if(!result)
 			return false;
 
+		//reset position and camera with spawning coordinate from dungeon
 		float posX, posY, posZ;
 		m_DungeonGenerator->GetSpawningCoord(posX, posY, posZ);
 		m_Position->SetPosition(posX, posY, posZ);
 		m_Camera->SetPosition(posX, posY + m_Camera->GetYOffset(), posZ);
+		m_Camera->SetRotation(0.0f, 0.0f, 0.0f);
+
+		//reset points
+		m_pointsCollected = 0;
 	}
-	else if(!keyDown && dungeonRecentlyCreated)
-		dungeonRecentlyCreated = false;
+	else if(!keyDown && m_dungeonRecentlyCreated)
+		m_dungeonRecentlyCreated = false;
 
 	return true;
 }
@@ -583,14 +621,14 @@ bool ApplicationClass::RenderGraphics()
 			currentModel->model->GetPosition(posX, posY, posZ);
 			D3DXMatrixTranslation(&worldMatrix, posX, posY, posZ);
 
-			result = m_TerrainShader->SetShaderParameters(m_Direct3D->GetDeviceContext(), worldMatrix, viewMatrix, projectionMatrix,
-				m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection(), m_Terrain->GetTexture());
+			result = m_SphereShader->SetShaderParameters(m_Direct3D->GetDeviceContext(), worldMatrix, viewMatrix, projectionMatrix,
+				m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection(), m_Terrain->GetSphereTexture());
 
 			if(!result)
 				return false;
 
 			currentModel->model->Render(m_Direct3D->GetDeviceContext());
-			m_TerrainShader->RenderShader(m_Direct3D->GetDeviceContext(), currentModel->model->GetIndexCount());
+			m_SphereShader->RenderShader(m_Direct3D->GetDeviceContext(), currentModel->model->GetIndexCount());
 
 			modelList->push_back(currentModel);
 			currentModel = modelList->front();
@@ -605,7 +643,7 @@ bool ApplicationClass::RenderGraphics()
 
 	//set terrain shader parameters before rendering the nodes
 	result = m_TerrainShader->SetShaderParameters(m_Direct3D->GetDeviceContext(), worldMatrix, viewMatrix, projectionMatrix,
-		m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection(), m_Terrain->GetTexture());
+		m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection(), m_Terrain->GetFloorTexture(), m_Terrain->GetWallTexture());
 
 	if(!result)
 		return false;

@@ -8,14 +8,14 @@
 #include "modelclass.h"
 #include "d3dclass.h"
 
-const int ROOM_MINWIDTH_DIV = 5;
-const int ROOM_MINHEIGHT_DIV = 5;
+const int ROOM_MINWIDTH_DIV = 4;
+const int ROOM_MINHEIGHT_DIV = 4;
 const int BORDER_MINDISTANCE = 20;
-const int DUNGEON_ROOMS = 4;
+const int DUNGEON_ROOMS = 9; //for now, the algorithm only can produce 9 rooms
 
 const int DUNGEON_MIN_PATHWIDTH = 10;
 const int DUNGEON_WALLHEIGHT = 150;
-const int COLLECTIBLES_PER_ROOM = 2;
+const int COLLECTIBLES_PER_ROOM = 1;
 
 class DungeonGeneratorClass
 {
@@ -54,6 +54,8 @@ public:
 	bool GenerateNewDungeon(int, D3DClass*);
 	void GetSpawningCoord(float&, float&, float&);
 	
+	bool CollectibleAtPosition(float, float, float);
+	int GetTotalPointCount();
 
 private:
 	
@@ -70,6 +72,10 @@ private:
 
 		ExitIndexes* exits;
 		int areaTopLeftIndex;
+
+		int areaBlock;
+		int* allowedConnections;
+		int connectionCount;
 	};
 
 
@@ -77,7 +83,7 @@ private:
 	void GetRandomRoom(int, int, int, int, int&, int&, int&);
 	bool RoomIsWithinBorders(int*, int*, int);
 
-	void ReleaseRooms();
+	void ReleaseRoomsAndCollectibles();
 	void SetRoomExit(RoomData*, int);
 
 	void ConnectTwoRooms(RoomData*, RoomData*);
@@ -104,6 +110,8 @@ private:
 	void CarvePathPoint(int);
 	bool SpawnCollectibles(RoomData*, D3DClass*);
 
+	void ConnectAllAreas(int&, int);
+	void ChangeAreaIndexes(int, int, int);
 
 	//void TempDrawArea(int, int, int, int);
 
@@ -111,6 +119,7 @@ private:
 	DungeonData* m_dungeonData;
 
 	int m_roomAmount;
+	int m_totalPointAmount;
 	RoomData* m_roomData[DUNGEON_ROOMS];
 
 	std::deque<PathFindingNode*> *openList;

@@ -21,6 +21,7 @@ TextClass::TextClass()
 
 	m_sentence11 = 0;
 	m_sentence12 = 0;
+	m_sentence13 = 0;
 }
 TextClass::TextClass(const TextClass& other)
 {
@@ -143,6 +144,13 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 		return false;
 	}
 
+	// Initialize the thirteenth sentence.
+	result = InitializeSentence(&m_sentence13, 32, device);
+	if(!result)
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -169,6 +177,7 @@ void TextClass::Shutdown()
 	ReleaseSentence(&m_sentence10);
 	ReleaseSentence(&m_sentence11);
 	ReleaseSentence(&m_sentence12);
+	ReleaseSentence(&m_sentence13);
 
 	return;
 }
@@ -246,6 +255,12 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext, FontShaderClass* Font
 	}
 
 	result = RenderSentence(m_sentence12, deviceContext, FontShader, worldMatrix, orthoMatrix);
+	if(!result)
+	{
+		return false;
+	}
+
+	result = RenderSentence(m_sentence13, deviceContext, FontShader, worldMatrix, orthoMatrix);
 	if(!result)
 	{
 		return false;
@@ -719,11 +734,11 @@ bool TextClass::SetDungeonRandSeed(unsigned int seed, ID3D11DeviceContext* devic
 	if(seed > 999999999999)
 		seed = 999999999999;
 
-	//convert cpu int to string
+	//convert seed int to string
 	char tempString[16];
 	_itoa_s(seed, tempString, 13);
 
-	//setup cpu string
+	//setup seed string
 	char renderString[32];
 	strcpy_s(renderString, "Current Seed: ");
 	strcat_s(renderString, tempString);
@@ -731,6 +746,39 @@ bool TextClass::SetDungeonRandSeed(unsigned int seed, ID3D11DeviceContext* devic
 	//update sentence vertex buffer
 	bool result = false;
 	result = UpdateSentence(m_sentence12, renderString, 10, 330, 0.0f, 1.0f, 0.0f, deviceContext);
+
+	return result;
+}
+
+//set text for displaying the points
+bool TextClass::SetPoints(int achievedPoints, int allPoints, ID3D11DeviceContext* deviceContext)
+{
+	//truncate point count to prevent buffer overflow
+	if(achievedPoints > 99)
+		achievedPoints = 99;
+
+	//convert achieved point int to string
+	char tempString[10];
+	_itoa_s(achievedPoints, tempString, 10);
+	
+	//truncate point count to prevent buffer overflow
+	if(allPoints > 99)
+		allPoints = 99;
+
+	//convert all point int to string
+	char tempString2[10];
+	_itoa_s(allPoints, tempString2, 10);
+
+	//setup point string
+	char renderString[32];
+	strcpy_s(renderString, "Points: ");
+	strcat_s(renderString, tempString);
+	strcat_s(renderString, " / ");
+	strcat_s(renderString, tempString2);
+
+	//update sentence vertex buffer
+	bool result = false;
+	result = UpdateSentence(m_sentence13, renderString, 10, 400, 0.0f, 1.0f, 0.0f, deviceContext);
 
 	return result;
 }

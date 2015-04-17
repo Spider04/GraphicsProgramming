@@ -4,6 +4,7 @@ DungeonGeneratorClass::DungeonGeneratorClass()
 	: m_dungeonData(0)
 	, m_lastUsedSeed(0)
 	, m_roomAmount(0)
+	, m_totalPointAmount(0)
 {}
 DungeonGeneratorClass::DungeonGeneratorClass(const DungeonGeneratorClass& other)
 {}
@@ -48,7 +49,7 @@ bool DungeonGeneratorClass::Initialize(int dungeonWidth, int dungeonHeight)
 
 void DungeonGeneratorClass::Shutdown()
 {
-	ReleaseRooms();
+	ReleaseRoomsAndCollectibles();
 
 	if(m_dungeonData)
 	{	
@@ -65,7 +66,7 @@ unsigned int DungeonGeneratorClass::GetDungeonSeed()
 bool DungeonGeneratorClass::GenerateNewDungeon(int amountOfRooms, D3DClass* d3d)
 {
 	//create new room array (for pathfinding and spawning object)
-	ReleaseRooms();
+	ReleaseRoomsAndCollectibles();
 
 	//init room data
 	m_roomAmount = 0;
@@ -98,41 +99,96 @@ bool DungeonGeneratorClass::GenerateNewDungeon(int amountOfRooms, D3DClass* d3d)
 	}
 
 	//get seed and use it to init the random function
-	m_lastUsedSeed = (unsigned int)time(NULL);
+	//m_lastUsedSeed = (unsigned int)time(NULL);
+	
+	//semi-random function by using a set seed
+	m_lastUsedSeed = (unsigned int)500;
+
 	srand(m_lastUsedSeed);
+
 
 	int startIndex = 0;
 	bool result = false;
 
-	//create all rooms (for now, for 4 set dungeons)
-	for(int i = 0; i < 4; i++)
+	//create all rooms
+	for(int i = 0; i < 9; i++)
 	{
 		if(i < 1)
 			startIndex = 0;
 		else if(i < 2)
-			startIndex = dungeonWidth / 2;
+			startIndex = dungeonWidth / 3;
 		else if(i < 3)
-			startIndex = (dungeonWidth / 2) + (dungeonWidth * (dungeonHeight / 2));
+			startIndex = (dungeonWidth / 3) * 2;
+
+		else if(i < 4)
+			startIndex = dungeonWidth * (dungeonHeight / 3);
+		else if(i < 5)
+			startIndex = (dungeonWidth * (dungeonHeight / 3)) + (dungeonWidth / 3);
+		else if(i < 6)
+			startIndex = (dungeonWidth * (dungeonHeight / 3)) + ((dungeonWidth / 3) * 2);
+
+		else if(i < 7)
+			startIndex = dungeonWidth * ((dungeonHeight / 3) * 2);
+		else if(i < 8)
+			startIndex = (dungeonWidth * ((dungeonHeight / 3) * 2)) + (dungeonWidth / 3);
 		else
-			startIndex = dungeonWidth * (dungeonHeight / 2);
-			
-		result = GenerateRoom(dungeonWidth / 2, dungeonHeight / 2, startIndex);
+			startIndex = (dungeonWidth * ((dungeonHeight / 3) * 2)) + ((dungeonWidth / 3) * 2);
+
+		result = GenerateRoom(dungeonWidth / 3, dungeonHeight / 3, startIndex);
+
 		if(!result)
 			return false;
 	}
+	
 
-	//connect all rooms together
-	for(int i = 0; i < DUNGEON_ROOMS; i++)
+	//connect all rooms with at least one other room to create a block (used later to ensure that all rooms are connected)
+	int totalAmountOfBlocks = 0;
+	int nextRoomIndex = 0;
+	for(int i = 0; i < 9; i++)
 	{
-		if(i < (DUNGEON_ROOMS - 1))
-			ConnectTwoRooms(m_roomData[i], m_roomData[i + 1]);
-		else
-			ConnectTwoRooms(m_roomData[i], m_roomData[0]);
+		//find room for connection, if not already assigned to a block
+		if(m_roomData[i]->areaBlock == -1)
+		{
+			nextRoomIndex = rand() % m_roomData[i]->connectionCount;
+			nextRoomIndex = m_roomData[i]->allowedConnections[nextRoomIndex];
+			ConnectTwoRooms(m_roomData[i], m_roomData[nextRoomIndex]);
 
-		//spawn collectibles in the room
-		SpawnCollectibles(m_roomData[i], d3d);
+			if(m_roomData[nextRoomIndex]->areaBlock == -1)
+			{
+				m_roomData[i]->areaBlock = totalAmountOfBlocks;
+				m_roomData[nextRoomIndex]->areaBlock = totalAmountOfBlocks;
+				totalAmountOfBlocks++;
+
+			}else
+				m_roomData[i]->areaBlock = m_roomData[nextRoomIndex]->areaBlock;
+			
+		}
 	}
 
+	//connect all blocks with each other
+	result = false;
+	int counter = 0;
+	while(!result && counter < 999999)
+	{
+		ConnectAllAreas(totalAmountOfBlocks, 9);
+		if(totalAmountOfBlocks == 1)
+			result = true;
+
+		counter++;
+	}
+
+	if(!result)
+		return false;
+
+	
+	//reset total amount of points
+	m_totalPointAmount = 0;
+
+	//spawn collectibles in all rooms
+	for(int i = 0; i < 9; i++)
+	{
+		SpawnCollectibles(m_roomData[i], d3d);
+	}
 	return result;
 }
 
@@ -193,6 +249,7 @@ bool DungeonGeneratorClass::GenerateRoom(int areaWidth, int areaHeight, int star
 	m_roomData[m_roomAmount]->width = roomWidth;
 	m_roomData[m_roomAmount]->length = roomHeight;
 	m_roomData[m_roomAmount]->areaTopLeftIndex = startIndex;
+	m_roomData[m_roomAmount]->areaBlock = -1; //not assigned to a specific block
 
 	//m_roomData[m_roomAmount]->exits = new ExitIndexes;
 	m_roomData[m_roomAmount]->exits->north = 0;
@@ -206,12 +263,67 @@ bool DungeonGeneratorClass::GenerateRoom(int areaWidth, int areaHeight, int star
 		SetRoomExit(m_roomData[m_roomAmount], i);
 	}
 
+	//set allowed connections by hand for now
+	m_roomData[m_roomAmount]->allowedConnections = new int;
+	if(m_roomAmount == 0){
+		m_roomData[m_roomAmount]->allowedConnections[0] = 1;
+		m_roomData[m_roomAmount]->allowedConnections[1] = 3;
+		m_roomData[m_roomAmount]->connectionCount = 2;
+
+	}else if(m_roomAmount == 1){
+		m_roomData[m_roomAmount]->allowedConnections[0] = 0;
+		m_roomData[m_roomAmount]->allowedConnections[1] = 2;
+		m_roomData[m_roomAmount]->allowedConnections[2] = 4;
+		m_roomData[m_roomAmount]->connectionCount = 3;
+
+	}else if(m_roomAmount == 2){
+		m_roomData[m_roomAmount]->allowedConnections[0] = 1;
+		m_roomData[m_roomAmount]->allowedConnections[1] = 5;
+		m_roomData[m_roomAmount]->connectionCount = 2;
+
+	}else if(m_roomAmount == 3){
+		m_roomData[m_roomAmount]->allowedConnections[0] = 0;
+		m_roomData[m_roomAmount]->allowedConnections[1] = 4;
+		m_roomData[m_roomAmount]->allowedConnections[2] = 6;
+		m_roomData[m_roomAmount]->connectionCount = 2;
+
+	}else if(m_roomAmount == 4){
+		m_roomData[m_roomAmount]->allowedConnections[0] = 1;
+		m_roomData[m_roomAmount]->allowedConnections[1] = 3;
+		m_roomData[m_roomAmount]->allowedConnections[2] = 5;
+		m_roomData[m_roomAmount]->allowedConnections[3] = 7;
+		m_roomData[m_roomAmount]->connectionCount = 4;
+	}
+	
+	else if(m_roomAmount == 5){
+		m_roomData[m_roomAmount]->allowedConnections[0] = 2;
+		m_roomData[m_roomAmount]->allowedConnections[1] = 4;
+		m_roomData[m_roomAmount]->allowedConnections[2] = 8;
+		m_roomData[m_roomAmount]->connectionCount = 3;
+
+	}else if(m_roomAmount == 6){
+		m_roomData[m_roomAmount]->allowedConnections[0] = 3;
+		m_roomData[m_roomAmount]->allowedConnections[1] = 7;
+		m_roomData[m_roomAmount]->connectionCount = 2;
+
+	}else if(m_roomAmount == 7){
+		m_roomData[m_roomAmount]->allowedConnections[0] = 6;
+		m_roomData[m_roomAmount]->allowedConnections[1] = 4;
+		m_roomData[m_roomAmount]->allowedConnections[2] = 8;
+		m_roomData[m_roomAmount]->connectionCount = 3;
+
+	}else if(m_roomAmount == 8){
+		m_roomData[m_roomAmount]->allowedConnections[0] = 5;
+		m_roomData[m_roomAmount]->allowedConnections[1] = 7;
+		m_roomData[m_roomAmount]->connectionCount = 2;
+	}
+
 	m_roomAmount++;
 	
 	return true;
 }
 
-void DungeonGeneratorClass::ReleaseRooms()
+void DungeonGeneratorClass::ReleaseRoomsAndCollectibles()
 {
 	for(int i = 0; i < DUNGEON_ROOMS; i++)
 	{
@@ -485,6 +597,11 @@ bool DungeonGeneratorClass::CreatePathBetweenPoints(int startIndex, int endIndex
 
 		if(counter > 999999998)
 			return false;
+
+		
+		//carve the start point too -> led sometimes to thye entry being sealed by one triangle
+		m_dungeonData->dungeonArray[startIndex] = 0;
+		CarvePathPoint(startIndex);
 	}
 
 	delete entryNode;
@@ -703,18 +820,132 @@ bool DungeonGeneratorClass::SpawnCollectibles(RoomData* room, D3DClass* d3d)
 		//(z:
 		posZ = (room->topLeftIndex / m_dungeonData->dungeonWidth) + (rand() % (int)((room->length - 2) * 100)) * 0.01f;
 
-
+		//create new model for collectible (no instance, since I want to delete them one by one when collected)
 		ModelClass* testModel = new ModelClass;
 		result = testModel->Initialize(d3d->GetDevice(), "../Engine/data/sphere.txt", L"../Engine/data/stone01.dds");
 		if(!result)
 			return false;
 		testModel->SetPosition(posX, 1.0f, posZ);
 
+		//create new collectible object and increment the counter of the total points
 		DungeonGeneratorClass::CollectibleData* testObject = new DungeonGeneratorClass::CollectibleData;
 		testObject->model = testModel;
+		testObject->collisionRadius = 2.0f;
+
+		testObject->posX = posX;
+		testObject->posY = 0.0f;
+		testObject->posZ = posZ;
 
 		m_dungeonData->collectibles->push_back(testObject);
+		m_totalPointAmount++;
 	}
 
 	return true;
+}
+
+bool DungeonGeneratorClass::CollectibleAtPosition(float xPos, float yPos, float zPos)
+{
+	bool returnValue = false;
+
+	//get pointer to collectibles list and set the object ptr to the first object in the list
+	std::deque<CollectibleData*> *listPtr = m_dungeonData->collectibles;
+	if(!m_dungeonData->collectibles->empty())
+	{
+		CollectibleData* currentObject = listPtr->front();
+
+		//push 0 as end marker in the back and pop the first element out
+		listPtr->push_back(0);
+		listPtr->pop_front();
+
+		//go through all objects until the 0 marker
+		while(currentObject)
+		{
+			bool positionsMatch = false;
+			//check if the player is not above the object (with a bit tolerance, since we have float values)
+			//check also if another collectible was already detected (only one per frame for now)
+			if(currentObject->posY + 0.1f > yPos && !returnValue)
+			{
+				//check if x and z position ar eclose enough
+				if((fabs(xPos - currentObject->posX) < currentObject->collisionRadius) 
+					&& (fabs(zPos - currentObject->posZ) < currentObject->collisionRadius))
+				{
+					//delete object and set boolean var to true
+					currentObject->model->Shutdown();
+					delete currentObject;
+					currentObject = 0;
+
+					positionsMatch = true;
+				}
+			}
+
+			//push element back, get next element and pop it out from the list
+			if(!positionsMatch)
+				listPtr->push_back(currentObject);
+			else
+				returnValue = true;
+
+			currentObject = listPtr->front();
+			listPtr->pop_front();
+		}
+	}
+
+	return returnValue;
+}
+
+int DungeonGeneratorClass::GetTotalPointCount()
+{
+	return m_totalPointAmount;
+}
+
+
+void DungeonGeneratorClass::ConnectAllAreas(int& totalAreaCount, int totalAmountOfRooms)
+{
+	bool connectionMade = false;
+	for (int i = (totalAreaCount - 1); i > 0; i--)
+	{
+		connectionMade = false;
+
+		for(int j = 0; j < totalAmountOfRooms; j++)
+		{
+			//get next room from this area
+			if(!connectionMade && m_roomData[j]->areaBlock == i)
+			{
+
+				//check all other rooms if they are from the next area
+				for(int k = 0; k < totalAmountOfRooms; k++)
+				{
+					if(!connectionMade && k != j && m_roomData[k]->areaBlock == i-1)
+					{
+
+						//check if connection can be made
+						for(int m = 0; m < m_roomData[j]->connectionCount; m++)
+						{
+							if(m_roomData[j]->allowedConnections[m] == k)
+							{
+								ConnectTwoRooms(m_roomData[j], m_roomData[k]);
+								connectionMade = true;
+
+								//reset all indexes from the connected areas to the smaller one
+								ChangeAreaIndexes(k, j, totalAmountOfRooms);
+								totalAreaCount--;
+
+								break;
+							}
+						
+						}
+
+					}
+				}
+			}
+		}
+	}
+}
+
+void DungeonGeneratorClass::ChangeAreaIndexes(int from, int to, int totalAmountOfRooms)
+{
+	for(int j = 0; j < totalAmountOfRooms; j++)
+	{
+		if(m_roomData[j]->areaBlock == from)
+			m_roomData[j]->areaBlock = to;
+	}
 }

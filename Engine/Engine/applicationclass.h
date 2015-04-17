@@ -8,7 +8,7 @@
 /////////////
 // GLOBALS //
 /////////////
-const bool FULL_SCREEN = true;
+const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = true;
 
 const float SCREEN_DEPTH = 1000.0f;
@@ -34,6 +34,7 @@ const int DUNGEON_HEIGHT = 256;
 #include "textclass.h"
 
 #include "terrainshaderclass.h"
+#include "sphereshaderclass.h"
 #include "lightclass.h"
 
 #include "frustumclass.h"
@@ -74,12 +75,15 @@ private:
 	TextClass* m_Text;
 
 	TerrainShaderClass* m_TerrainShader;
+	SphereShaderClass* m_SphereShader;
 	LightClass* m_Light;
 
 	FrustumClass* m_Frustum;
 	QuadTreeClass* m_QuadTree;
 	DungeonGeneratorClass* m_DungeonGenerator;
-	bool dungeonRecentlyCreated;
+	bool m_dungeonRecentlyCreated;
+
+	int m_pointsCollected;
 };
 
 #endif
