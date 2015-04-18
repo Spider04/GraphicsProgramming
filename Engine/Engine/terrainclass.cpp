@@ -5,7 +5,6 @@ TerrainClass::TerrainClass()
 	: m_heightMap(0)
 	, m_floorTexture(0)
 	, m_wallTexture(0)
-	, m_sphereTexture(0)
 	, m_vertices(0)
 {}
 TerrainClass::TerrainClass(const TerrainClass& other)
@@ -14,34 +13,7 @@ TerrainClass::TerrainClass(const TerrainClass& other)
 TerrainClass::~TerrainClass()
 {}
 
-bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename, WCHAR* floorTextureFilename, WCHAR* wallTextureFilename, WCHAR* sphereTextureFilename)
-{
-	//load height map for the terrain
-	bool result;
-	result = LoadHeightMap(heightMapFilename);
-	if(!result)
-		return false;
-
-	//normalize the height
-	NormalizeHeightMap();
-
-	//calculate shared normals for lighting
-	result = CalculateNormals();
-	if(!result)
-		return false;
-
-	//calculate texture coordinates and load texture
-	CalculateTextureCoordinates();
-	result = LoadTextures(device, floorTextureFilename, wallTextureFilename, sphereTextureFilename);
-	if(!result)
-		return false;
-
-	// Initialize vertex array that will hold the geometry
-	result = InitializeBuffers(device);
-	return result;
-}
-
-bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::DungeonData* dungeonArray, WCHAR* floorTextureFilename, WCHAR* wallTextureFilename, WCHAR* sphereTextureFilename)
+bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::DungeonData* dungeonArray, WCHAR* floorTextureFilename, WCHAR* wallTextureFilename)
 {
 	//load height map for the terrain
 	bool result;
@@ -59,7 +31,7 @@ bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::Dunge
 
 	//calculate texture coordinates and load texture
 	CalculateTextureCoordinates();
-	result = LoadTextures(device, floorTextureFilename, wallTextureFilename, sphereTextureFilename);
+	result = LoadTextures(device, floorTextureFilename, wallTextureFilename);
 	if(!result)
 		return false;
 
@@ -99,10 +71,6 @@ ID3D11ShaderResourceView* TerrainClass::GetWallTexture()
 {
 	return m_wallTexture->GetTexture();
 }
-ID3D11ShaderResourceView* TerrainClass::GetSphereTexture()
-{
-	return m_sphereTexture->GetTexture();
-}
 
 int TerrainClass::GetVertexCount()
 {
@@ -112,91 +80,6 @@ int TerrainClass::GetVertexCount()
 void TerrainClass::CopyVertexArray(void* vertexList)
 {
 	memcpy(vertexList, m_vertices, sizeof(VertexType) * m_vertexCount);
-}
-
-//load height map via file
-bool TerrainClass::LoadHeightMap(char* filename)
-{
-	//open height map in binary
-	FILE* filePtr;
-	int error;
-
-	error = fopen_s(&filePtr, filename, "rb");
-	if(error != 0)
-		return false;
-
-	//read file header
-	unsigned int count;
-	BITMAPFILEHEADER bitmapFileHeader;
-	count = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
-	if(count != 1)
-		return false;
-
-	//read bitmap info header
-	BITMAPINFOHEADER bitmapInfoHeader;
-	count = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
-	if(count != 1)
-		return false;
-
-	//get size of terrain from the image
-	m_terrainWidth = bitmapInfoHeader.biWidth;
-	m_terrainHeight = bitmapInfoHeader.biHeight;
-
-	//calculate image size
-	int imageSize;
-	imageSize = m_terrainWidth * m_terrainHeight * 3;
-
-	//allocate memory for bmp image
-	unsigned char* bitmapImage;
-	bitmapImage = new unsigned char[imageSize];
-	if(!bitmapImage)
-		return false;
-
-	//move to beginning of bmp data
-	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
-
-	//read image data
-	count = fread(bitmapImage, 1, imageSize, filePtr);
-	if(count != imageSize)
-		return false;
-
-	//close file
-	error = fclose(filePtr);
-	if(error != 0)
-		return false;
-	
-
-
-	//create structure for height map data
-	m_heightMap = new HeightMapType[m_terrainWidth * m_terrainHeight];
-	if(!m_heightMap)
-		return false;
-
-	int k = 0;
-	int index;
-	unsigned char height;
-
-	for(int j = 0; j < m_terrainHeight; j++)
-	{
-		for(int i = 0; i < m_terrainWidth; i++)
-		{
-			height = bitmapImage[k];
-			index = (m_terrainHeight * j) + i;
-
-			m_heightMap[index].x = (float)i;
-			m_heightMap[index].y = (float)height;
-			m_heightMap[index].z = (float)j;
-
-			//added by three, since we just need one of the color values for the grey scale
-			k += 3;
-		}
-	}
-
-	//release bitmap image data
-	delete [] bitmapImage;
-	bitmapImage = 0;
-	
-	return true;
 }
 
 //load height map via dungeon array
@@ -443,7 +326,7 @@ void TerrainClass::CalculateTextureCoordinates()
 }
 
 //load texture resource into texture object
-bool TerrainClass::LoadTextures(ID3D11Device* device, WCHAR* floorFilename, WCHAR* wallFilename, WCHAR* sphereFilename)
+bool TerrainClass::LoadTextures(ID3D11Device* device, WCHAR* floorFilename, WCHAR* wallFilename)
 {
 	//load the floor texture
 	m_floorTexture = new TextureClass;
@@ -461,16 +344,6 @@ bool TerrainClass::LoadTextures(ID3D11Device* device, WCHAR* floorFilename, WCHA
 		return false;
 
 	result = m_wallTexture->Initialize(device, wallFilename);
-	if(!result)
-		return false;
-
-	//load the sphere texture
-	m_sphereTexture = new TextureClass;
-	if(!m_sphereTexture)
-		return false;
-
-	result = m_sphereTexture->Initialize(device, sphereFilename);
-
 
 	return result;
 }
@@ -489,13 +362,6 @@ void TerrainClass::ReleaseTextures()
 		m_wallTexture->Shutdown();
 		delete m_wallTexture;
 		m_wallTexture = 0;
-	}
-
-	if(m_sphereTexture)
-	{
-		m_sphereTexture->Shutdown();
-		delete m_sphereTexture;
-		m_sphereTexture = 0;
 	}
 
 	return;

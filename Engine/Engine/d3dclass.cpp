@@ -271,6 +271,17 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
 
 
+	// Setup the viewport for rendering.
+    m_viewport.Width = (float)screenWidth;
+    m_viewport.Height = (float)screenHeight;
+    m_viewport.MinDepth = 0.0f;
+    m_viewport.MaxDepth = 1.0f;
+    m_viewport.TopLeftX = 0.0f;
+    m_viewport.TopLeftY = 0.0f;
+
+	// Create the viewport.
+    m_deviceContext->RSSetViewports(1, &m_viewport);
+
 
 
 	//create rasterize state - controls how polygons are rendered (e.g. wireframe mode or drawing both front and back faces)
@@ -569,6 +580,21 @@ void D3DClass::TurnOffAlphaBlending()
 	
 	// Turn off the alpha blending.
 	m_deviceContext->OMSetBlendState(m_alphaDisableBlendingState, blendFactor, 0xffffffff);
+
+	return;
+}
+
+void D3DClass::SetBackBufferRenderTarget()
+{
+	// Bind the render target view and depth stencil buffer to the output render pipeline.
+	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+
+	return;
+}
+void D3DClass::ResetViewport()
+{
+	// Set the viewport.
+    m_deviceContext->RSSetViewports(1, &m_viewport);
 
 	return;
 }

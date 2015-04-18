@@ -40,10 +40,6 @@ bool DungeonGeneratorClass::Initialize(int dungeonWidth, int dungeonHeight)
 		m_roomData[i]->exits->east = 0;
 	}
 
-	//generate initial dungeon
-	/*bool result = false;
-	result = GenerateNewDungeon(DUNGEON_ROOMS);
-	*/
 	return true;
 }
 
@@ -822,7 +818,7 @@ bool DungeonGeneratorClass::SpawnCollectibles(RoomData* room, D3DClass* d3d)
 
 		//create new model for collectible (no instance, since I want to delete them one by one when collected)
 		ModelClass* testModel = new ModelClass;
-		result = testModel->Initialize(d3d->GetDevice(), "../Engine/data/sphere.txt", L"../Engine/data/stone01.dds");
+		result = testModel->Initialize(d3d->GetDevice(), "../Engine/data/sphere.txt", L"../Engine/data/red.dds");
 		if(!result)
 			return false;
 		testModel->SetPosition(posX, 1.0f, posZ);
