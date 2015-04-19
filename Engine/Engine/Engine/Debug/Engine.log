@@ -1,0 +1,36 @@
+﻿Build started 19/04/2015 19:07:59.
+     1>Project "C:\Users\Work\Downloads\Engine\Engine\Engine.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt applicationclass.cpp
+         applicationclass.cpp
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Work\Downloads\Engine\Debug\Engine.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Work\Downloads\Engine\Debug\Engine.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Work\Downloads\Engine\Debug\Engine.lib" /MACHINE:X86 Debug\applicationclass.obj
+         Debug\cameraclass.obj
+         Debug\colorfiltershaderclass.obj
+         Debug\d3dclass.obj
+         Debug\dungeon_generator.obj
+         Debug\fontclass.obj
+         Debug\fontshaderclass.obj
+         Debug\frustumclass.obj
+         Debug\inputclass.obj
+         Debug\lightclass.obj
+         Debug\main.obj
+         Debug\modelclass.obj
+         Debug\orthowindowclass.obj
+         Debug\positionclass.obj
+         Debug\quadtreeclass.obj
+         Debug\rendertextureclass.obj
+         Debug\sphereshaderclass.obj
+         Debug\systemclass.obj
+         Debug\terrainclass.obj
+         Debug\terrainshaderclass.obj
+         Debug\textclass.obj
+         Debug\textureclass.obj
+         Debug\textureshaderclass.obj
+         Debug\timerclass.obj
+         Engine.vcxproj -> C:\Users\Work\Downloads\Engine\Debug\Engine.exe
+     1>Done Building Project "C:\Users\Work\Downloads\Engine\Engine\Engine.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:07.40
