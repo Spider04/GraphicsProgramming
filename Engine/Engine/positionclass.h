@@ -3,6 +3,9 @@
 
 #include <math.h>
 
+
+//instance acts as physical representation of player
+//--> all physical forces on player are handled here (gravity, jump)
 class PositionClass
 {
 public:
@@ -21,8 +24,6 @@ public:
 
 	void MoveForward(bool);
 	void MoveBackward(bool);
-	void MoveUpward(bool);
-	void MoveDownward(bool);
 
 	void TurnLeft(bool);
 	void TurnRight(bool);

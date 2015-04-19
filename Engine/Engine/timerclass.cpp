@@ -1,63 +1,47 @@
-///////////////////////////////////////////////////////////////////////////////
-// Filename: timerclass.cpp
-///////////////////////////////////////////////////////////////////////////////
 #include "timerclass.h"
 
-
 TimerClass::TimerClass()
-{
-}
-
-
+{}
 TimerClass::TimerClass(const TimerClass& other)
-{
-}
-
+{}
 
 TimerClass::~TimerClass()
-{
-}
+{}
 
 
 bool TimerClass::Initialize()
 {
-	// Check to see if this system supports high performance timers.
+	//check if system supports high performance timers
 	QueryPerformanceFrequency((LARGE_INTEGER*)&m_frequency);
 	if(m_frequency == 0)
-	{
 		return false;
-	}
 
-	// Find out how many times the frequency counter ticks every millisecond.
+	//get ticks per MS
 	m_ticksPerMs = (float)(m_frequency / 1000);
 
+	//save current time in start time variable
 	QueryPerformanceCounter((LARGE_INTEGER*)&m_startTime);
 
 	return true;
 }
 
-
+//calc the frame time
 void TimerClass::Frame()
 {
+	//get the current time
 	INT64 currentTime;
-	float timeDifference;
-
-
-	// Query the current time.
 	QueryPerformanceCounter((LARGE_INTEGER*)&currentTime);
 
-	// Calculate the difference in time since the last time we queried for the current time.
+	//calc time difference to last time + resulting frame time
+	float timeDifference = 0.0f;
 	timeDifference = (float)(currentTime - m_startTime);
-
-	// Calculate the frame time by the time difference over the timer speed resolution.
 	m_frameTime = timeDifference / m_ticksPerMs;
 
-	// Restart the timer.
+	//set start timer to current time
 	m_startTime = currentTime;
 
 	return;
 }
-
 
 float TimerClass::GetTime()
 {

@@ -1,6 +1,5 @@
 #include "terrainclass.h"
 
-
 TerrainClass::TerrainClass()
 	: m_heightMap(0)
 	, m_floorTexture(0)
@@ -12,6 +11,7 @@ TerrainClass::TerrainClass(const TerrainClass& other)
 
 TerrainClass::~TerrainClass()
 {}
+
 
 bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::DungeonData* dungeonArray, WCHAR* floorTextureFilename, WCHAR* wallTextureFilename)
 {
@@ -48,40 +48,6 @@ bool TerrainClass::LoadDungeonData(DungeonGeneratorClass::DungeonData* dungeonAr
 	return result;
 }
 
-void TerrainClass::Shutdown()
-{
-	//release textures
-	ReleaseTextures();
-
-	// Release vertex array
-	ShutdownBuffers();
-
-	//release height map
-	ShutdownHeightMap();
-
-	return;
-}
-
-
-ID3D11ShaderResourceView* TerrainClass::GetFloorTexture()
-{
-	return m_floorTexture->GetTexture();
-}
-ID3D11ShaderResourceView* TerrainClass::GetWallTexture()
-{
-	return m_wallTexture->GetTexture();
-}
-
-int TerrainClass::GetVertexCount()
-{
-	return m_vertexCount;
-}
-
-void TerrainClass::CopyVertexArray(void* vertexList)
-{
-	memcpy(vertexList, m_vertices, sizeof(VertexType) * m_vertexCount);
-}
-
 //load height map via dungeon array
 bool TerrainClass::LoadHeightMap(DungeonGeneratorClass::DungeonData* dungeonData)
 {
@@ -91,13 +57,14 @@ bool TerrainClass::LoadHeightMap(DungeonGeneratorClass::DungeonData* dungeonData
 
 	//create structure for height map data
 	m_heightMap = new HeightMapType[m_terrainWidth * m_terrainHeight];
-	if(!m_heightMap)
+	if (!m_heightMap)
 		return false;
 
+	//set coords in height map to height of dungeon array
 	int index = 0;
-	for(int j = 0; j < m_terrainHeight; j++)
+	for (int j = 0; j < m_terrainHeight; j++)
 	{
-		for(int i = 0; i < m_terrainWidth; i++)
+		for (int i = 0; i < m_terrainWidth; i++)
 		{
 			index = (m_terrainHeight * j) + i;
 
@@ -106,15 +73,15 @@ bool TerrainClass::LoadHeightMap(DungeonGeneratorClass::DungeonData* dungeonData
 			m_heightMap[index].z = (float)j;
 		}
 	}
-	
+
 	return true;
 }
 
 void TerrainClass::NormalizeHeightMap()
 {
-	for(int j = 0; j < m_terrainHeight; j++)
+	for (int j = 0; j < m_terrainHeight; j++)
 	{
-		for(int i = 0; i < m_terrainWidth; i++)
+		for (int i = 0; i < m_terrainWidth; i++)
 		{
 			m_heightMap[(m_terrainHeight * j) + i].y /= 15.0f;
 		}
@@ -127,22 +94,22 @@ bool TerrainClass::CalculateNormals()
 {
 	//goes thorugh each vertex and takes an average of the normal for each face that the vertex is part of
 	//afterwards each vertex will be averaged to have less abrupt changes in light direction
-	
+
 	//temporary array to hold un-normalized normal vectors
 	VectorType* normals;
-	normals = new VectorType[(m_terrainHeight -1) * (m_terrainWidth - 1)];
-	if(!normals)
+	normals = new VectorType[(m_terrainHeight - 1) * (m_terrainWidth - 1)];
+	if (!normals)
 		return false;
-	
+
 	//calculate normals for all faces in the mesh
 	int index, count = 0;
 	int index1, index2, index3, index4 = 0;
 	float vertex1[3], vertex2[3], vertex3[3];
 	float vector1[3], vector2[3];
-	
-	for(int j = 0; j < (m_terrainHeight - 1); j++)
+
+	for (int j = 0; j < (m_terrainHeight - 1); j++)
 	{
-		for(int i = 0; i < (m_terrainWidth - 1); i++)
+		for (int i = 0; i < (m_terrainWidth - 1); i++)
 		{
 			index1 = (j * m_terrainHeight) + i;
 			index2 = (j * m_terrainHeight) + i + 1;
@@ -152,11 +119,11 @@ bool TerrainClass::CalculateNormals()
 			vertex1[0] = m_heightMap[index1].x;
 			vertex1[1] = m_heightMap[index1].y;
 			vertex1[2] = m_heightMap[index1].z;
-		
+
 			vertex2[0] = m_heightMap[index2].x;
 			vertex2[1] = m_heightMap[index2].y;
 			vertex2[2] = m_heightMap[index2].z;
-		
+
 			vertex3[0] = m_heightMap[index3].x;
 			vertex3[1] = m_heightMap[index3].y;
 			vertex3[2] = m_heightMap[index3].z;
@@ -169,7 +136,7 @@ bool TerrainClass::CalculateNormals()
 			vector2[1] = vertex3[1] - vertex2[1];
 			vector2[2] = vertex3[2] - vertex2[2];
 
-			index = (j * (m_terrainHeight-1)) + i;
+			index = (j * (m_terrainHeight - 1)) + i;
 
 			//calculate the cross product of those two vectors to get the un-normalized value for this face normal
 			normals[index].x = (vector1[1] * vector2[2]) - (vector1[2] * vector2[1]);
@@ -180,22 +147,22 @@ bool TerrainClass::CalculateNormals()
 
 	//take an average of each face normal that the vertex touches in order to get the averaged normal for that vertex
 	float sum[3], length;
-	for(int j = 0; j < m_terrainHeight; j++)
+	for (int j = 0; j < m_terrainHeight; j++)
 	{
-		for(int i = 0; i < m_terrainWidth; i++)
+		for (int i = 0; i < m_terrainWidth; i++)
 		{
-			// Initialize the sum.
+			//reset sum
 			sum[0] = 0.0f;
 			sum[1] = 0.0f;
 			sum[2] = 0.0f;
 
-			// Initialize the count.
+			//reset
 			count = 0;
 
-			// Bottom left face.
-			if(((i-1) >= 0) && ((j-1) >= 0))
+			//bottom left face
+			if (((i - 1) >= 0) && ((j - 1) >= 0))
 			{
-				index = ((j-1) * (m_terrainHeight-1)) + (i-1);
+				index = ((j - 1) * (m_terrainHeight - 1)) + (i - 1);
 
 				sum[0] += normals[index].x;
 				sum[1] += normals[index].y;
@@ -203,10 +170,10 @@ bool TerrainClass::CalculateNormals()
 				count++;
 			}
 
-			// Bottom right face.
-			if((i < (m_terrainWidth-1)) && ((j-1) >= 0))
+			//bottom right face
+			if ((i < (m_terrainWidth - 1)) && ((j - 1) >= 0))
 			{
-				index = ((j-1) * (m_terrainHeight-1)) + i;
+				index = ((j - 1) * (m_terrainHeight - 1)) + i;
 
 				sum[0] += normals[index].x;
 				sum[1] += normals[index].y;
@@ -214,10 +181,10 @@ bool TerrainClass::CalculateNormals()
 				count++;
 			}
 
-			// Upper left face.
-			if(((i-1) >= 0) && (j < (m_terrainHeight-1)))
+			//upper left face
+			if (((i - 1) >= 0) && (j < (m_terrainHeight - 1)))
 			{
-				index = (j * (m_terrainHeight-1)) + (i-1);
+				index = (j * (m_terrainHeight - 1)) + (i - 1);
 
 				sum[0] += normals[index].x;
 				sum[1] += normals[index].y;
@@ -225,29 +192,29 @@ bool TerrainClass::CalculateNormals()
 				count++;
 			}
 
-			// Upper right face.
-			if((i < (m_terrainWidth-1)) && (j < (m_terrainHeight-1)))
+			//upper right face
+			if ((i < (m_terrainWidth - 1)) && (j < (m_terrainHeight - 1)))
 			{
-				index = (j * (m_terrainHeight-1)) + i;
+				index = (j * (m_terrainHeight - 1)) + i;
 
 				sum[0] += normals[index].x;
 				sum[1] += normals[index].y;
 				sum[2] += normals[index].z;
 				count++;
 			}
-			
-			// Take the average of the faces touching this vertex.
+
+			//take average of faces tuching the vertex
 			sum[0] = (sum[0] / (float)count);
 			sum[1] = (sum[1] / (float)count);
 			sum[2] = (sum[2] / (float)count);
 
-			// Calculate the length of this normal.
+			//calc length of normal
 			length = sqrt((sum[0] * sum[0]) + (sum[1] * sum[1]) + (sum[2] * sum[2]));
-			
-			// Get an index to the vertex location in the height map array.
+
+			//get index of vertex location in height map
 			index = (j * m_terrainHeight) + i;
 
-			// Normalize the final shared normal for this vertex and store it in the height map array.
+			//normalize and store value in height map
 			m_heightMap[index].nx = (sum[0] / length);
 			m_heightMap[index].ny = (sum[1] / length);
 			m_heightMap[index].nz = (sum[2] / length);
@@ -255,21 +222,10 @@ bool TerrainClass::CalculateNormals()
 	}
 
 	//release temporary normals
-	delete [] normals;
+	delete[] normals;
 	normals = 0;
 
 	return true;
-}
-
-void TerrainClass::ShutdownHeightMap()
-{
-	if(m_heightMap)
-	{
-		delete [] m_heightMap;
-		m_heightMap = 0;
-	}
-
-	return;
 }
 
 
@@ -292,9 +248,9 @@ void TerrainClass::CalculateTextureCoordinates()
 
 
 	//calculate tu and tv texture coordinate for each vertex
-	for(int j = 0; j < m_terrainHeight; j++)
+	for (int j = 0; j < m_terrainHeight; j++)
 	{
-		for(int i = 0; i < m_terrainWidth; i++)
+		for (int i = 0; i < m_terrainWidth; i++)
 		{
 			//store texture coordinate in height map
 			m_heightMap[(m_terrainHeight * j) + i].tu = tuCoordinate;
@@ -305,7 +261,7 @@ void TerrainClass::CalculateTextureCoordinates()
 			tuCount++;
 
 			//reset value when the end of the texture is reached
-			if(tuCount == incrementCount)
+			if (tuCount == incrementCount)
 			{
 				tuCoordinate = 0.0f;
 				tuCount = 0;
@@ -315,7 +271,7 @@ void TerrainClass::CalculateTextureCoordinates()
 		tvCoordinate -= incrementValue;
 		tvCount++;
 
-		if(tvCount == incrementCount)
+		if (tvCount == incrementCount)
 		{
 			tvCoordinate = 1.0f;
 			tvCount = 0;
@@ -330,17 +286,17 @@ bool TerrainClass::LoadTextures(ID3D11Device* device, WCHAR* floorFilename, WCHA
 {
 	//load the floor texture
 	m_floorTexture = new TextureClass;
-	if(!m_floorTexture)
+	if (!m_floorTexture)
 		return false;
 
 	bool result;
 	result = m_floorTexture->Initialize(device, floorFilename);
-	if(!result)
+	if (!result)
 		return false;
 
 	//load the wall texture
 	m_wallTexture = new TextureClass;
-	if(!m_wallTexture)
+	if (!m_wallTexture)
 		return false;
 
 	result = m_wallTexture->Initialize(device, wallFilename);
@@ -348,26 +304,7 @@ bool TerrainClass::LoadTextures(ID3D11Device* device, WCHAR* floorFilename, WCHA
 	return result;
 }
 
-void TerrainClass::ReleaseTextures()
-{
-	if(m_floorTexture)
-	{
-		m_floorTexture->Shutdown();
-		delete m_floorTexture;
-		m_floorTexture = 0;
-	}
-
-	if(m_wallTexture)
-	{
-		m_wallTexture->Shutdown();
-		delete m_wallTexture;
-		m_wallTexture = 0;
-	}
-
-	return;
-}
-
-
+//copy-paste from rastertek tutorial in order to avoid number mistakes
 bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 {
 	// Calculate the number of vertices in the terrain mesh.
@@ -375,7 +312,7 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 
 	// Create the vertex array.
 	m_vertices = new VertexType[m_vertexCount];
-	if(!m_vertices)
+	if (!m_vertices)
 		return false;
 
 	// Initialize the index to the vertex array.
@@ -384,9 +321,9 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 	float tu, tv = 0.0f;
 
 	// Load the vertex and index arrays with the terrain data.
-	for(int j = 0; j < (m_terrainHeight-1); j++)
+	for (int j = 0; j < (m_terrainHeight - 1); j++)
 	{
-		for(int i = 0; i < (m_terrainWidth-1); i++)
+		for (int i = 0; i < (m_terrainWidth - 1); i++)
 		{
 			index1 = (m_terrainHeight * j) + i;          // Bottom left.
 			index2 = (m_terrainHeight * j) + i + 1;      // Bottom right.
@@ -397,7 +334,7 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 			tv = m_heightMap[index3].tv;
 
 			// Modify the texture coordinates to cover the top edge.
-			if(tv == 1.0f)
+			if (tv == 1.0f)
 				tv = 0.0f;
 
 			m_vertices[index].position = D3DXVECTOR3(m_heightMap[index3].x, m_heightMap[index3].y, m_heightMap[index3].z);
@@ -410,10 +347,10 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 			tv = m_heightMap[index4].tv;
 
 			// Modify the texture coordinates to cover the top and right edge.
-			if(tu == 0.0f)
+			if (tu == 0.0f)
 				tu = 1.0f;
 
-			if(tv == 1.0f)
+			if (tv == 1.0f)
 				tv = 0.0f;
 
 			m_vertices[index].position = D3DXVECTOR3(m_heightMap[index4].x, m_heightMap[index4].y, m_heightMap[index4].z);
@@ -438,10 +375,10 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 			tv = m_heightMap[index4].tv;
 
 			// Modify the texture coordinates to cover the top and right edge.
-			if(tu == 0.0f)
+			if (tu == 0.0f)
 				tu = 1.0f;
 
-			if(tv == 1.0f)
+			if (tv == 1.0f)
 				tv = 0.0f;
 
 			m_vertices[index].position = D3DXVECTOR3(m_heightMap[index4].x, m_heightMap[index4].y, m_heightMap[index4].z);
@@ -453,7 +390,7 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 			tu = m_heightMap[index2].tu;
 
 			// Modify the texture coordinates to cover the right edge.
-			if(tu == 0.0f)
+			if (tu == 0.0f)
 				tu = 1.0f;
 
 			m_vertices[index].position = D3DXVECTOR3(m_heightMap[index2].x, m_heightMap[index2].y, m_heightMap[index2].z);
@@ -466,14 +403,85 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 	return true;
 }
 
+
+void TerrainClass::Shutdown()
+{
+	//release textures
+	ReleaseTextures();
+
+	// Release vertex array
+	ShutdownBuffers();
+
+	//release height map
+	ShutdownHeightMap();
+
+	return;
+}
+
+void TerrainClass::ReleaseTextures()
+{
+	//release floor texture object
+	if (m_floorTexture)
+	{
+		m_floorTexture->Shutdown();
+		delete m_floorTexture;
+		m_floorTexture = 0;
+	}
+
+	//release wall texture object
+	if (m_wallTexture)
+	{
+		m_wallTexture->Shutdown();
+		delete m_wallTexture;
+		m_wallTexture = 0;
+	}
+
+	return;
+}
+
 void TerrainClass::ShutdownBuffers()
 {
-	// Release the index buffer.
-	if(m_vertices)
+	//release index buffer
+	if (m_vertices)
 	{
-		delete [] m_vertices;
+		delete[] m_vertices;
 		m_vertices = 0;
 	}
 
 	return;
 }
+
+void TerrainClass::ShutdownHeightMap()
+{
+	if (m_heightMap)
+	{
+		delete[] m_heightMap;
+		m_heightMap = 0;
+	}
+
+	return;
+}
+
+
+ID3D11ShaderResourceView* TerrainClass::GetFloorTexture()
+{
+	return m_floorTexture->GetTexture();
+}
+
+ID3D11ShaderResourceView* TerrainClass::GetWallTexture()
+{
+	return m_wallTexture->GetTexture();
+}
+
+
+int TerrainClass::GetVertexCount()
+{
+	return m_vertexCount;
+}
+
+void TerrainClass::CopyVertexArray(void* vertexList)
+{
+	memcpy(vertexList, m_vertices, sizeof(VertexType) * m_vertexCount);
+}
+
+

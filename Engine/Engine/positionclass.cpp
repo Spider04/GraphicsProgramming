@@ -25,6 +25,7 @@ PositionClass::PositionClass()
 	m_allowedUpwardDifference = 0.0f;
 	m_gravityForce = 30.0f;
 
+	//variables for physical values are set to standard values from the beginning
 	m_jumpForce = 0.0f;
 	m_jumpSpeed = -1.0f;
 	m_jumpSpeedMax = 10.0f;
@@ -42,6 +43,7 @@ PositionClass::PositionClass(const PositionClass& other)
 PositionClass::~PositionClass()
 {
 }
+
 
 void PositionClass::SetPosition(float x, float y, float z)
 {
@@ -75,10 +77,13 @@ void PositionClass::GetRotation(float& x, float& y, float& z)
 	return;
 }
 
+
 void PositionClass::Frame(float time, float floorHeight, bool onMesh)
 {
+	//reccord frame time
 	m_frameTime = time;
 
+	//only calculate physical forces when on mesh
 	if(onMesh)
 	{
 		//jump if necessary
@@ -113,7 +118,7 @@ void PositionClass::Frame(float time, float floorHeight, bool onMesh)
 
 void PositionClass::MoveForward(bool keydown)
 {
-	// Update the forward speed movement based on the frame time and whether the user is holding the key down or not.
+	//update forward speed (has momentum)
 	if(keydown)
 	{
 		m_forwardSpeed += m_frameTime * 0.001f;
@@ -124,16 +129,14 @@ void PositionClass::MoveForward(bool keydown)
 	else
 	{
 		m_forwardSpeed -= m_frameTime * 0.0007f;
-
 		if(m_forwardSpeed < 0.0f)
 			m_forwardSpeed = 0.0f;
 	}
 
-	// Convert degrees to radians.
+	//calculate new position based on current forward speed
 	float radians;
 	radians = m_rotationY * 0.0174532925f;
 
-	// Update the position.
 	m_positionX += sinf(radians) * m_forwardSpeed;
 	m_positionZ += cosf(radians) * m_forwardSpeed;
 
@@ -142,7 +145,7 @@ void PositionClass::MoveForward(bool keydown)
 
 void PositionClass::MoveBackward(bool keydown)
 {
-	// Update the backward speed movement based on the frame time and whether the user is holding the key down or not.
+	//update backward speed (has momentum)
 	if(keydown)
 	{
 		m_backwardSpeed += m_frameTime * 0.001f;
@@ -153,66 +156,16 @@ void PositionClass::MoveBackward(bool keydown)
 	else
 	{
 		m_backwardSpeed -= m_frameTime * 0.0007f;
-		
 		if(m_backwardSpeed < 0.0f)
 			m_backwardSpeed = 0.0f;
 	}
 
-	// Convert degrees to radians.
+	//calculate new position based on current backward speed
 	float radians;
 	radians = m_rotationY * 0.0174532925f;
 
-	// Update the position.
 	m_positionX -= sinf(radians) * m_backwardSpeed;
 	m_positionZ -= cosf(radians) * m_backwardSpeed;
-
-	return;
-}
-
-void PositionClass::MoveUpward(bool keydown)
-{
-	// Update the upward speed movement based on the frame time and whether the user is holding the key down or not.
-	if(keydown)
-	{
-		m_upwardSpeed += m_frameTime * 0.003f;
-
-		if(m_upwardSpeed > (m_frameTime * 0.03f))
-			m_upwardSpeed = m_frameTime * 0.03f;
-	}
-	else
-	{
-		m_upwardSpeed -= m_frameTime * 0.002f;
-
-		if(m_upwardSpeed < 0.0f)
-			m_upwardSpeed = 0.0f;
-	}
-
-	// Update the height position.
-	m_positionY += m_upwardSpeed;
-
-	return;
-}
-
-void PositionClass::MoveDownward(bool keydown)
-{
-	// Update the downward speed movement based on the frame time and whether the user is holding the key down or not.
-	if(keydown)
-	{
-		m_downwardSpeed += m_frameTime * 0.003f;
-
-		if(m_downwardSpeed > (m_frameTime * 0.03f))
-			m_downwardSpeed = m_frameTime * 0.03f;
-	}
-	else
-	{
-		m_downwardSpeed -= m_frameTime * 0.002f;
-
-		if(m_downwardSpeed < 0.0f)
-			m_downwardSpeed = 0.0f;
-	}
-
-	// Update the height position.
-	m_positionY -= m_downwardSpeed;
 
 	return;
 }
@@ -220,7 +173,7 @@ void PositionClass::MoveDownward(bool keydown)
 
 void PositionClass::TurnLeft(bool keydown)
 {
-	// Update the left turn speed movement based on the frame time and whether the user is holding the key down or not.
+	//calc left turn speed
 	if(keydown)
 	{
 		m_leftTurnSpeed += m_frameTime * 0.01f;
@@ -231,15 +184,14 @@ void PositionClass::TurnLeft(bool keydown)
 	else
 	{
 		m_leftTurnSpeed -= m_frameTime* 0.005f;
-
 		if(m_leftTurnSpeed < 0.0f)
 			m_leftTurnSpeed = 0.0f;
 	}
 
-	// Update the rotation.
+	//update rotation based on the current left turn speed
 	m_rotationY -= m_leftTurnSpeed;
 
-	// Keep the rotation in the 0 to 360 range.
+	//keep rotation in 360 degrees range
 	if(m_rotationY < 0.0f)
 		m_rotationY += 360.0f;
 
@@ -248,7 +200,7 @@ void PositionClass::TurnLeft(bool keydown)
 
 void PositionClass::TurnRight(bool keydown)
 {
-	// Update the right turn speed movement based on the frame time and whether the user is holding the key down or not.
+	//calc right turn speed
 	if(keydown)
 	{
 		m_rightTurnSpeed += m_frameTime * 0.01f;
@@ -259,15 +211,14 @@ void PositionClass::TurnRight(bool keydown)
 	else
 	{
 		m_rightTurnSpeed -= m_frameTime* 0.005f;
-
 		if(m_rightTurnSpeed < 0.0f)
 			m_rightTurnSpeed = 0.0f;
 	}
 
-	// Update the rotation.
+	//update rotation based on current right turn speed
 	m_rotationY += m_rightTurnSpeed;
 
-	// Keep the rotation in the 0 to 360 range.
+	//keep rotation in 360 degrees range
 	if(m_rotationY > 360.0f)
 		m_rotationY -= 360.0f;
 
@@ -276,7 +227,7 @@ void PositionClass::TurnRight(bool keydown)
 
 void PositionClass::LookUpward(bool keydown)
 {
-	// Update the upward rotation speed movement based on the frame time and whether the user is holding the key down or not.
+	//update upward rotation
 	if(keydown)
 	{
 		m_lookUpSpeed += m_frameTime * 0.01f;
@@ -287,24 +238,24 @@ void PositionClass::LookUpward(bool keydown)
 	else
 	{
 		m_lookUpSpeed -= m_frameTime* 0.005f;
-
 		if(m_lookUpSpeed < 0.0f)
 			m_lookUpSpeed = 0.0f;
 	}
 
-	// Update the rotation.
+	//update rotation based on the current upward rotation speed
 	m_rotationX -= m_lookUpSpeed;
 
-	// Keep the rotation maximum 90 degrees.
-	if(m_rotationX > 90.0f)
+	//keep rotation in 90 degrees range
+	if (m_rotationX > 90.0f)
 		m_rotationX = 90.0f;
 
+	
 	return;
 }
 
 void PositionClass::LookDownward(bool keydown)
 {
-	// Update the downward rotation speed movement based on the frame time and whether the user is holding the key down or not.
+	//update downward rotation
 	if(keydown)
 	{
 		m_lookDownSpeed += m_frameTime * 0.01f;
@@ -315,16 +266,15 @@ void PositionClass::LookDownward(bool keydown)
 	else
 	{
 		m_lookDownSpeed -= m_frameTime* 0.005f;
-
 		if(m_lookDownSpeed < 0.0f)
 			m_lookDownSpeed = 0.0f;
 	}
 
-	// Update the rotation.
+	//update rotation based on the current downward rotation speed
 	m_rotationX += m_lookDownSpeed;
 
-	// Keep the rotation maximum 90 degrees.
-	if(m_rotationX < -90.0f)
+	//keep rotation in 90 degrees range
+	if (m_rotationX < -90.0f)
 		m_rotationX = -90.0f;
 
 	return;
@@ -361,6 +311,7 @@ void PositionClass::SetJumpForce(float value)
 
 void PositionClass::Jump()
 {
+	//only calculate new jump if the character is not currently in a jump
 	if(!m_inJump){
 		m_inJump = true;
 		m_jumpSpeed = m_jumpSpeedMax;

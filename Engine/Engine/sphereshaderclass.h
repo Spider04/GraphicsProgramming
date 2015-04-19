@@ -29,7 +29,6 @@ private:
 		D3DXMATRIX view;
 		D3DXMATRIX projection;
 	};
-
 	struct LightBufferType
 	{
 		D3DXVECTOR4 ambientColor;

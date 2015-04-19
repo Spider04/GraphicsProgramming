@@ -11,6 +11,7 @@ QuadTreeClass::QuadTreeClass(const QuadTreeClass& other)
 QuadTreeClass::~QuadTreeClass()
 {}
 
+
 bool QuadTreeClass::Initialize(TerrainClass* terrain, ID3D11Device* device, DungeonGeneratorClass::DungeonData* dungeonData)
 {
 	//get number of vertices and the total triangle count from the terrain vertex array
@@ -74,6 +75,7 @@ void QuadTreeClass::Render(FrustumClass* frustum, ID3D11DeviceContext* deviceCon
 
 	return;
 }
+
 
 //returns number of drawn triangles in previous Render call
 int QuadTreeClass::GetDrawCount()
@@ -258,7 +260,7 @@ void QuadTreeClass::CreateTreeNode(NodeType* node, float positionX, float positi
 		}
 	}
 	
-	// Set up the description of the vertex buffer.
+	//set up vertex buffer
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	vertexBufferDesc.ByteWidth = sizeof(VertexType) * vertexCount;
@@ -267,16 +269,16 @@ void QuadTreeClass::CreateTreeNode(NodeType* node, float positionX, float positi
 	vertexBufferDesc.MiscFlags = 0;
 	vertexBufferDesc.StructureByteStride = 0;
 
-	// Give the subresource structure a pointer to the vertex data.
 	D3D11_SUBRESOURCE_DATA vertexData;
 	vertexData.pSysMem = vertices;
 	vertexData.SysMemPitch = 0;
 	vertexData.SysMemSlicePitch = 0;
 
-	// Now finally create the vertex buffer.
+	//create vertex buffer
 	device->CreateBuffer(&vertexBufferDesc, &vertexData, &node->vertexBuffer);
 
-	// Set up the description of the index buffer.
+
+	//set up index buffer
 	D3D11_BUFFER_DESC indexBufferDesc;
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	indexBufferDesc.ByteWidth = sizeof(unsigned long) * vertexCount;
@@ -285,16 +287,16 @@ void QuadTreeClass::CreateTreeNode(NodeType* node, float positionX, float positi
 	indexBufferDesc.MiscFlags = 0;
 	indexBufferDesc.StructureByteStride = 0;
 
-	// Give the subresource structure a pointer to the index data.
 	D3D11_SUBRESOURCE_DATA indexData;
 	indexData.pSysMem = indices;
 	indexData.SysMemPitch = 0;
 	indexData.SysMemSlicePitch = 0;
 
-	// Create the index buffer.
+	//create index buffer
 	device->CreateBuffer(&indexBufferDesc, &indexData, &node->indexBuffer);
 
-	// Release the vertex and index arrays now that the data is stored in the buffers in the node.
+
+	//release temporary arrays
 	delete [] vertices;
 	vertices = 0;
 
@@ -439,13 +441,13 @@ void QuadTreeClass::RenderNode(NodeType* node, FrustumClass* frustum, ID3D11Devi
 	unsigned int stride = 0, offset = 0;
 	stride = sizeof(VertexType);
 
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
+	//set vertex buffer active
 	deviceContext->IASetVertexBuffers(0, 1, &node->vertexBuffer, &stride, &offset);
 
-    // Set the index buffer to active in the input assembler so it can be rendered.
+    //set index buffer active
 	deviceContext->IASetIndexBuffer(node->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-    // Set the type of primitive that should be rendered from this vertex buffer, in this case a line list.
+    //set primitives to triangles
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	
 	//render polygons in this node
@@ -454,30 +456,6 @@ void QuadTreeClass::RenderNode(NodeType* node, FrustumClass* frustum, ID3D11Devi
 
 	shader->RenderShader(deviceContext, indexCount);
 	m_drawCount += node->triangleCount;
-
-	//draw the models that are within the node
-	/*std::deque<ModelClass*> *modelList = m_dungeonData->collectibles;
-	ModelClass* currentModel;
-
-	float posX, posY, posZ;
-	if(modelList)
-	{
-		modelList->push_back(0);
-		currentModel = modelList->front();
-		modelList->pop_front();
-
-		while(currentModel)
-		{
-			modelList->push_back(currentModel);
-			currentModel->GetPosition(posX, posY, posZ);
-
-			if(frustum->CheckCube(posX, posY, posZ, 1.0f))
-				currentModel->Render(deviceContext);
-
-			currentModel = modelList->front();
-			modelList->pop_front();
-		}
-	}*/
 
 	return;
 }
@@ -564,6 +542,7 @@ void QuadTreeClass::FindNode(NodeType* node, float x, float z, float& height)
 	return;
 }
 
+
 //create 3 lines form triangle and check if position is inside all 3 lines
 bool QuadTreeClass::CheckHeightOfTriangle(float x, float z, float& height, float v0[3], float v1[3], float v2[3])
 {
@@ -602,11 +581,11 @@ bool QuadTreeClass::CheckHeightOfTriangle(float x, float z, float& height, float
 	normal[1] = normal[1] / magnitude;
 	normal[2] = normal[2] / magnitude;
 
-	// Find the distance from the origin to the plane.
+	//get distance from origin to plane
 	float D = 0.0f;
 	D = ((-normal[0] * v0[0]) + (-normal[1] * v0[1]) + (-normal[2] * v0[2]));
 
-	// Get the denominator of the equation.
+	//get denominator
 	float denominator = 0.0f;
 	denominator = ((normal[0] * directionVector[0]) + (normal[1] * directionVector[1]) + (normal[2] * directionVector[2]));
 
@@ -618,17 +597,17 @@ bool QuadTreeClass::CheckHeightOfTriangle(float x, float z, float& height, float
 	float numerator = 0.0f;
 	numerator = -1.0f * (((normal[0] * startVector[0]) + (normal[1] * startVector[1]) + (normal[2] * startVector[2])) + D);
 
-	// Calculate where we intersect the triangle.
+	//calc the intersection point
 	float t = 0.0f;
 	t = numerator / denominator;
 
-	// Find the intersection vector.
+	//get intersection vector 
 	float Q[3];
 	Q[0] = startVector[0] + (directionVector[0] * t);
 	Q[1] = startVector[1] + (directionVector[1] * t);
 	Q[2] = startVector[2] + (directionVector[2] * t);
 
-	// Find the three edges of the triangle.
+	//find all three edges of the triangle
 	float e1[3];
 	e1[0] = v1[0] - v0[0];
 	e1[1] = v1[1] - v0[1];
@@ -644,13 +623,13 @@ bool QuadTreeClass::CheckHeightOfTriangle(float x, float z, float& height, float
 	e3[1] = v0[1] - v2[1];
 	e3[2] = v0[2] - v2[2];
 
-	// Calculate the normal for the first edge.
+	//calc normal for 1st edge
 	float edgeNormal[3];
 	edgeNormal[0] = (e1[1] * normal[2]) - (e1[2] * normal[1]);
 	edgeNormal[1] = (e1[2] * normal[0]) - (e1[0] * normal[2]);
 	edgeNormal[2] = (e1[0] * normal[1]) - (e1[1] * normal[0]);
 
-	// Calculate the determinant to see if it is on the inside, outside, or directly on the edge.
+	//calc determinant
 	float temp[3];
 	temp[0] = Q[0] - v0[0];
 	temp[1] = Q[1] - v0[1];
@@ -659,43 +638,45 @@ bool QuadTreeClass::CheckHeightOfTriangle(float x, float z, float& height, float
 	float determinant = 0.0f;
 	determinant = ((edgeNormal[0] * temp[0]) + (edgeNormal[1] * temp[1]) + (edgeNormal[2] * temp[2]));
 
-	// Check if it is outside.
+	//check if the edge is outside
 	if(determinant > 0.001f)
 		return false;
 
-	// Calculate the normal for the second edge.
+
+	//calc normal for 2nd edge
 	edgeNormal[0] = (e2[1] * normal[2]) - (e2[2] * normal[1]);
 	edgeNormal[1] = (e2[2] * normal[0]) - (e2[0] * normal[2]);
 	edgeNormal[2] = (e2[0] * normal[1]) - (e2[1] * normal[0]);
 
-	// Calculate the determinant to see if it is on the inside, outside, or directly on the edge.
+	//calc determinant
 	temp[0] = Q[0] - v1[0];
 	temp[1] = Q[1] - v1[1];
 	temp[2] = Q[2] - v1[2];
 
 	determinant = ((edgeNormal[0] * temp[0]) + (edgeNormal[1] * temp[1]) + (edgeNormal[2] * temp[2]));
 
-	// Check if it is outside.
+	//check if the edge is outside
 	if(determinant > 0.001f)
 		return false;
 
-	// Calculate the normal for the third edge.
+
+	//calc normal for 3rd edge
 	edgeNormal[0] = (e3[1] * normal[2]) - (e3[2] * normal[1]);
 	edgeNormal[1] = (e3[2] * normal[0]) - (e3[0] * normal[2]);
 	edgeNormal[2] = (e3[0] * normal[1]) - (e3[1] * normal[0]);
 
-	// Calculate the determinant to see if it is on the inside, outside, or directly on the edge.
+	//calc determinant
 	temp[0] = Q[0] - v2[0];
 	temp[1] = Q[1] - v2[1];
 	temp[2] = Q[2] - v2[2];
 
 	determinant = ((edgeNormal[0] * temp[0]) + (edgeNormal[1] * temp[1]) + (edgeNormal[2] * temp[2]));
 
-	// Check if it is outside.
+	//check if the edge is outside
 	if(determinant > 0.001f)
 		return false;
 
-	// Now we have our height.
+	//height is calculated
 	height = Q[1];
 
 	return true;

@@ -1,8 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////
-// Filename: textclass.cpp
-///////////////////////////////////////////////////////////////////////////////
 #include "textclass.h"
-
 
 TextClass::TextClass()
 	: m_Font(0)
@@ -107,6 +103,7 @@ bool TextClass::InitIntroSentence(ID3D11Device* device, ID3D11DeviceContext* dev
 
 	return true;
 }
+
 bool TextClass::InitEndSentence(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
 	bool result = InitializeSentence(&m_endSentence0, 32, device);
@@ -227,6 +224,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	return true;
 }
 
+
 void TextClass::Shutdown()
 {
 	//release font object
@@ -242,6 +240,33 @@ void TextClass::Shutdown()
 
 	return;
 }
+
+void TextClass::ReleaseSentence(SentenceType** sentence)
+{
+	if (*sentence)
+	{
+		//release vertex buffer
+		if ((*sentence)->vertexBuffer)
+		{
+			(*sentence)->vertexBuffer->Release();
+			(*sentence)->vertexBuffer = 0;
+		}
+
+		//release index buffer
+		if ((*sentence)->indexBuffer)
+		{
+			(*sentence)->indexBuffer->Release();
+			(*sentence)->indexBuffer = 0;
+		}
+
+		//release pointer
+		delete *sentence;
+		*sentence = 0;
+	}
+
+	return;
+}
+
 
 bool TextClass::Render(ID3D11DeviceContext* deviceContext, FontShaderClass* FontShader, D3DXMATRIX worldMatrix, D3DXMATRIX orthoMatrix
 	, int gameStateIndex)
@@ -274,6 +299,35 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext, FontShaderClass* Font
 
 	return result;
 }
+
+bool TextClass::RenderSentence(SentenceType* sentence, ID3D11DeviceContext* deviceContext, FontShaderClass* FontShader, D3DXMATRIX worldMatrix,
+	D3DXMATRIX orthoMatrix)
+{
+	//set stride and offset for vertex
+	unsigned int stride, offset;
+	stride = sizeof(VertexType);
+	offset = 0;
+
+	//set vertex buffer to active to enable rendering it
+	deviceContext->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
+
+	//do the same for the indx buffer
+	deviceContext->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	//set primitives to triangles
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	//get pixel color from sentence object
+	D3DXVECTOR4 pixelColor;
+	pixelColor = D3DXVECTOR4(sentence->red, sentence->green, sentence->blue, 1.0f);
+
+	//sart rendering via the font shader
+	bool result = false;
+	result = FontShader->Render(deviceContext, sentence->indexCount, worldMatrix, m_baseViewMatrix, orthoMatrix, m_Font->GetTexture(), pixelColor);
+
+	return result;
+}
+
 
 bool TextClass::UpdateSentence(SentenceType* sentence, char* text, int positionX, int positionY, float red, float green, float blue,
 							   ID3D11DeviceContext* deviceContext)
@@ -330,60 +384,6 @@ bool TextClass::UpdateSentence(SentenceType* sentence, char* text, int positionX
 	vertices = 0;
 
 	return true;
-}
-
-void TextClass::ReleaseSentence(SentenceType** sentence)
-{
-	if(*sentence)
-	{
-		//release vertex buffer
-		if((*sentence)->vertexBuffer)
-		{
-			(*sentence)->vertexBuffer->Release();
-			(*sentence)->vertexBuffer = 0;
-		}
-
-		//release index buffer
-		if((*sentence)->indexBuffer)
-		{
-			(*sentence)->indexBuffer->Release();
-			(*sentence)->indexBuffer = 0;
-		}
-
-		//release pointer
-		delete *sentence;
-		*sentence = 0;
-	}
-
-	return;
-}
-
-bool TextClass::RenderSentence(SentenceType* sentence, ID3D11DeviceContext* deviceContext, FontShaderClass* FontShader, D3DXMATRIX worldMatrix, 
-							   D3DXMATRIX orthoMatrix)
-{
-	//set stride and offset for vertex
-	unsigned int stride, offset;
-    stride = sizeof(VertexType); 
-	offset = 0;
-
-	//set vertex buffer to active to enable rendering it
-	deviceContext->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
-
-    //do the same for the indx buffer
-	deviceContext->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-    //set primitives to triangles
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	//get pixel color from sentence object
-	D3DXVECTOR4 pixelColor;
-	pixelColor = D3DXVECTOR4(sentence->red, sentence->green, sentence->blue, 1.0f);
-
-	//sart rendering via the font shader
-	bool result = false;
-	result = FontShader->Render(deviceContext, sentence->indexCount, worldMatrix, m_baseViewMatrix, orthoMatrix, m_Font->GetTexture(), pixelColor);
-
-	return result;
 }
 
 //set text for displaying the points

@@ -22,12 +22,6 @@ bool SphereShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	return result;
 }
 
-void SphereShaderClass::Shutdown()
-{
-	ShutdownShader();
-	return;
-}
-
 bool SphereShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
 {
 	//init pointer for this function with null
@@ -86,7 +80,7 @@ bool SphereShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 		return false;
 	
 
-	//create layout of vertext data which is processed by the shader
+	//create layout of vertex data which is processed by the shader
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
 	polygonLayout[0].SemanticName = "POSITION";
 	polygonLayout[0].SemanticIndex = 0;
@@ -113,7 +107,7 @@ bool SphereShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	polygonLayout[2].InstanceDataStepRate = 0;
 
 	//get size of layout description in order to create the input layout
-	unsigned int numElements;
+	unsigned int numElements = 0;
 	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
 	//create vertex input layout
@@ -128,6 +122,7 @@ bool SphereShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 
 	pixelShaderBuffer->Release();
 	pixelShaderBuffer = 0;
+
 
 	//create smapler desc- filter is most important
 	D3D11_SAMPLER_DESC samplerDesc;
@@ -146,7 +141,7 @@ bool SphereShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	// Create the texture sampler state.
+	//create texture sample state
 	result = device->CreateSamplerState(&samplerDesc, &m_sampleState);
 	if(FAILED(result))
 		return false;
@@ -164,6 +159,7 @@ bool SphereShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	if(FAILED(result))
 		return false;
 
+	//create light buffer
 	D3D11_BUFFER_DESC lightBufferDesc;
 	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	lightBufferDesc.ByteWidth = sizeof(LightBufferType);
@@ -172,12 +168,18 @@ bool SphereShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	lightBufferDesc.MiscFlags = 0;
 	lightBufferDesc.StructureByteStride = 0;
 
-	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
 	result = device->CreateBuffer(&lightBufferDesc, NULL, &m_lightBuffer);
 	if(FAILED(result))
 		return false;
 
 	return true;
+}
+
+
+void SphereShaderClass::Shutdown()
+{
+	ShutdownShader();
+	return;
 }
 
 void SphereShaderClass::ShutdownShader()
@@ -254,7 +256,7 @@ void SphereShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND 
 bool SphereShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix,
 	D3DXVECTOR4 ambientColor, D3DXVECTOR4 diffuseColor, D3DXVECTOR3 lightDirection, ID3D11ShaderResourceView* sphereTexture)
 {
-	// Transpose the matrices to prepare them for the shader.
+	//transpose matrices for shader
 	D3DXMatrixTranspose(&worldMatrix, &worldMatrix);
 	D3DXMatrixTranspose(&viewMatrix, &viewMatrix);
 	D3DXMatrixTranspose(&projectionMatrix, &projectionMatrix);
@@ -276,6 +278,7 @@ bool SphereShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, 
 	//unlock constant buffer
 	deviceContext->Unmap(m_matrixBuffer, 0);
 	
+
 	//set constant buffer in vertex shader with updated values
 	unsigned int bufferNumber;
 	bufferNumber = 0;
@@ -300,7 +303,7 @@ bool SphereShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, 
 	bufferNumber = 0;
 	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_lightBuffer);
 
-	//set terrain texture in pixel shader
+	//set sphere texture in pixel shader
 	deviceContext->PSSetShaderResources(0, 1, &sphereTexture);
 
 	return true;

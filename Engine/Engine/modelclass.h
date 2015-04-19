@@ -1,45 +1,18 @@
-////////////////////////////////////////////////////////////////////////////////
-// Filename: modelclass.h
-////////////////////////////////////////////////////////////////////////////////
 #ifndef _MODELCLASS_H_
 #define _MODELCLASS_H_
 
 
-//////////////
-// INCLUDES //
-//////////////
 #include <D3D11.h>
 #include <D3DX10math.h>
 #include <fstream>
 using namespace std;
 
-
-///////////////////////
-// MY CLASS INCLUDES //
-///////////////////////
 #include "textureclass.h"
 
 
-////////////////////////////////////////////////////////////////////////////////
-// Class name: ModelClass
-////////////////////////////////////////////////////////////////////////////////
+//model class - representation of a physical object for rendering
 class ModelClass
 {
-private:
-	struct VertexType
-	{
-		D3DXVECTOR3 position;
-	    D3DXVECTOR2 texture;
-		D3DXVECTOR3 normal;
-	};
-
-	struct ModelType
-	{
-		float x, y, z;
-		float tu, tv;
-		float nx, ny, nz;
-	};
-
 public:
 	ModelClass();
 	ModelClass(const ModelClass&);
@@ -56,17 +29,25 @@ public:
 	void GetPosition(float&, float&, float&);
 
 private:
-	bool InitializeBuffers(ID3D11Device*);
-	void ShutdownBuffers();
-	void RenderBuffers(ID3D11DeviceContext*);
-
-	bool LoadTexture(ID3D11Device*, WCHAR*);
-	void ReleaseTexture();
+	struct VertexType
+	{
+		D3DXVECTOR3 position;
+		D3DXVECTOR2 texture;
+		D3DXVECTOR3 normal;
+	};
+	struct ModelType
+	{
+		float x, y, z;
+		float tu, tv;
+		float nx, ny, nz;
+	};
 
 	bool LoadModel(char*);
-	void ReleaseModel();
+	bool InitializeBuffers(ID3D11Device*);
+	bool LoadTexture(ID3D11Device*, WCHAR*);
 
-private:
+	void RenderBuffers(ID3D11DeviceContext*);
+
 	ID3D11Buffer *m_vertexBuffer, *m_indexBuffer;
 	int m_vertexCount, m_indexCount;
 	TextureClass* m_Texture;

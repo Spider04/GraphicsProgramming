@@ -1,12 +1,15 @@
 #ifndef _TERRAINSHADERCLASS_H_
 #define _TERRAINSHADERCLASS_H_
 
+
 #include <D3D11.h>
 #include <D3DX10math.h>
 #include <D3DX11async.h>
 #include <fstream>
 using namespace std;
 
+
+//shader for the terrain
 class TerrainShaderClass
 {
 public:

@@ -1,8 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
-// Filename: d3dclass.cpp
-////////////////////////////////////////////////////////////////////////////////
 #include "d3dclass.h"
-
 
 D3DClass::D3DClass()
 	: m_swapChain(0)
@@ -28,6 +24,7 @@ D3DClass::~D3DClass()
 bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, bool fullscreen, 
 						  float screenDepth, float screenNear)
 {
+	//set vsync enabled variable
 	m_vsync_enabled = vsync;
 
 	//----- get refresh rate from monitor / video card
@@ -79,26 +76,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 				denominator = displayModeList[i].RefreshRate.Denominator;
 			}
 	}
-	//----- 
 
-	//----- retrieve name of video card and its amount of memory
-	//get video card description
-	DXGI_ADAPTER_DESC adapterDesc;
-	result = adapter->GetDesc(&adapterDesc);
-	if(FAILED(result))
-		return false;
-
-	//store dedicated video card memory in mBytes
-	m_videoCardMemory = (int)(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
-
-	//convert name of video card to char array before storing
-	unsigned int stringLength;
-	int error;
-
-	error = wcstombs_s(&stringLength, m_videoCardDescription, 128, adapterDesc.Description, 128);
-	if(error != 0)
-		return false;
-	//----- 
 
 	//----- release the structures
 	delete [] displayModeList;
@@ -342,9 +320,6 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 
 	
 
-
-
-	
 	// Clear the second depth stencil state before setting the parameters.
 	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
 	ZeroMemory(&depthDisabledStencilDesc, sizeof(depthDisabledStencilDesc));
@@ -411,6 +386,7 @@ void D3DClass::Shutdown()
 		m_swapChain->SetFullscreenState(false, NULL);
 	}
 
+	//release all pointers and reset them to 0
 	if(m_alphaEnableBlendingState)
 	{
 		m_alphaEnableBlendingState->Release();
@@ -480,15 +456,17 @@ void D3DClass::Shutdown()
 	return;
 }
 
+
 void D3DClass::BeginScene(float red, float green, float blue, float alpha)
 {
+	//get the color for the new scene (usually black)
 	float color[4];
 	color[0] = red;
 	color[1] = green;
 	color[2] = blue;
 	color[3] = alpha;
 
-	//clear back buffer
+	//clear back buffer with color
 	m_deviceContext->ClearRenderTargetView(m_renderTargetView, color);
 
 	//clear depth buffer
@@ -537,13 +515,6 @@ void D3DClass::GetOrthoMatrix(D3DXMATRIX& orthoMatrix)
 	return;
 }
 
-void D3DClass::GetVideoCardInfo(char* cardName, int& memory)
-{
-	strcpy_s(cardName, 128, m_videoCardDescription);
-	memory = m_videoCardMemory;
-	return;
-}
-
 void D3DClass::TurnZBufferOn()
 {
 	m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
@@ -557,28 +528,28 @@ void D3DClass::TurnZBufferOff()
 
 void D3DClass::TurnOnAlphaBlending()
 {
-	// Setup the blend factor
+	//create blend factor
 	float blendFactor[4];
 	blendFactor[0] = 0.0f;
 	blendFactor[1] = 0.0f;
 	blendFactor[2] = 0.0f;
 	blendFactor[3] = 0.0f;
 	
-	// Turn on the alpha blending.
+	//set the blend satet - enables alpha blending
 	m_deviceContext->OMSetBlendState(m_alphaEnableBlendingState, blendFactor, 0xffffffff);
 
 	return;
 }
 void D3DClass::TurnOffAlphaBlending()
 {
-	// Setup the blend factor.
+	//create blend factor
 	float blendFactor[4];
 	blendFactor[0] = 0.0f;
 	blendFactor[1] = 0.0f;
 	blendFactor[2] = 0.0f;
 	blendFactor[3] = 0.0f;
 	
-	// Turn off the alpha blending.
+	//turnn alpha bending off
 	m_deviceContext->OMSetBlendState(m_alphaDisableBlendingState, blendFactor, 0xffffffff);
 
 	return;
@@ -586,14 +557,13 @@ void D3DClass::TurnOffAlphaBlending()
 
 void D3DClass::SetBackBufferRenderTarget()
 {
-	// Bind the render target view and depth stencil buffer to the output render pipeline.
+	//reset render target to screen
 	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
 
 	return;
 }
 void D3DClass::ResetViewport()
 {
-	// Set the viewport.
     m_deviceContext->RSSetViewports(1, &m_viewport);
 
 	return;

@@ -2,7 +2,7 @@
 #define _APPLICATIONCLASS_H_
 
 
-const bool FULL_SCREEN = true;
+const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = true;
 
 const float SCREEN_DEPTH = 1000.0f;
@@ -30,7 +30,7 @@ const int DUNGEON_HEIGHT = 256;
 #include "timerclass.h"
 #include "cameraclass.h"
 
-//classes for displaying additional information on screen
+//classes for displaying text
 #include "fontshaderclass.h"
 #include "textclass.h"
 
@@ -39,9 +39,8 @@ const int DUNGEON_HEIGHT = 256;
 #include "orthowindowclass.h"
 #include "colorfiltershaderclass.h"
 
-////////////////////////////////////////////////////////////////////////////////
-// Class name: ApplicationClass
-////////////////////////////////////////////////////////////////////////////////
+
+//the applicatiion in a nutshell
 class ApplicationClass
 {
 public:
@@ -54,15 +53,20 @@ public:
 	bool Frame();
 
 private:
+	//these functions will be executed each frame
 	bool HandleInput();
 	bool RenderGraphics();
 
+	//various rendering functions
 	bool RenderIntroScreen();
 	bool RenderSceneToTexture();
 	bool RenderPostProcessing();
 	bool RenderEndScreen();
 
+	//wall collision
 	void HandleWallCollision(float&, float&, float&, float, float, float);
+
+	//game state
 	enum GameState{INTRO, GAME, END};
 	GameState currentGameState;
 
@@ -87,6 +91,7 @@ private:
 	TimerClass* m_Timer;
 	CameraClass* m_Camera;
 	
+	//variables for displaying text
 	FontShaderClass* m_FontShader;
 	TextClass* m_Text;
 	//amount of points which the player has currently collected
@@ -96,6 +101,7 @@ private:
 	ColorFilterShaderClass* m_ColorFilterShader;
 	RenderTextureClass *m_RenderTexture, *m_PostProcessedTexture;
 
+	//2D rendering plane for 2D textures (like post proccessed 2D texture from scene)
 	OrthoWindowClass *m_FullScreenWindow;
 	D3DXMATRIX m_baseViewMatrix;
 };

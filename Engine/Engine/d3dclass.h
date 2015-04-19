@@ -1,6 +1,7 @@
 #ifndef _D3DCLASS_H_
 #define _D3DCLASS_H_
 
+
 //link specific libraries from DirectX for various functionalities
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
@@ -12,6 +13,8 @@
 #include <D3D11.h>
 #include <D3DX10math.h>
 
+
+//handling all communication with DirectX
 class D3DClass
 {
 public:
@@ -32,7 +35,7 @@ public:
 	void GetWorldMatrix(D3DXMATRIX&);
 	void GetOrthoMatrix(D3DXMATRIX&);
 
-	void GetVideoCardInfo(char*, int&);
+	//void GetVideoCardInfo(char*, int&);
 
 	void TurnZBufferOn();
 	void TurnZBufferOff();
@@ -44,8 +47,6 @@ public:
 
 private:
 	bool m_vsync_enabled;
-	int m_videoCardMemory;
-	char m_videoCardDescription[128];
 
 	IDXGISwapChain* m_swapChain;
 	ID3D11Device* m_device;

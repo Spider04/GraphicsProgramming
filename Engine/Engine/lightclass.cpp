@@ -8,6 +8,8 @@ LightClass::LightClass(const LightClass& other)
 LightClass::~LightClass()
 {}
 
+
+//setter for the light parameters
 void LightClass::SetAmbientColor(float red, float green, float blue, float alpha)
 {
 	m_ambientColor = D3DXVECTOR4(red, green, blue, alpha);
@@ -24,6 +26,8 @@ void LightClass::SetDirection(float x, float y, float z)
 	return;
 }
 
+
+//getter functions for the light parameters
 D3DXVECTOR4 LightClass::GetAmbientColor()
 {
 	return m_ambientColor;

@@ -8,6 +8,7 @@
 
 #include <dinput.h>
 
+//handles the input from the player - saves all key states (although we need just a few)
 class InputClass
 {
 public:
@@ -15,40 +16,27 @@ public:
 	InputClass(const InputClass&);
 	~InputClass();
 
-	bool Initialize(HINSTANCE, HWND, int, int);
+	bool Initialize(HINSTANCE, HWND);
 	void Shutdown();
 	bool Frame();
 
-	void GetMouseLocation(int&, int&);
-
 	bool IsEscapePressed();
+	bool IsSpacebarPressed();
+	bool IsPPressed();
+
 	bool IsLeftPressed();
 	bool IsRightPressed();
 	bool IsUpPressed();
 	bool IsDownPressed();
 
-	bool IsAPressed();
-	bool IsZPressed();
 	bool IsPgUpPressed();
 	bool IsPgDownPressed();
 
-	bool IsSpacebarPressed();
-	bool IsPPressed();
-
 private:
-	bool ReadKeyboard();
-	bool ReadMouse();
-	void ProcessInput();
-
 	IDirectInput8* m_directInput;
 	IDirectInputDevice8* m_keyboard;
-	IDirectInputDevice8* m_mouse;
 
 	unsigned char m_keyboardState[256];
-	DIMOUSESTATE m_mouseState;
-
-	int m_screenWidth, m_screenHeight;
-	int m_mouseX, m_mouseY;
 };
 
 #endif

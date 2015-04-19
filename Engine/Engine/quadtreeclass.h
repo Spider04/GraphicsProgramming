@@ -10,6 +10,8 @@ const int MAX_TRIANGLES = 10000;
 #include "terrainshaderclass.h"
 #include "dungeon_generator.h"
 
+
+//splits the terrain up in multiple nodes and stores them in a tree-like structure
 class QuadTreeClass
 {
 public:
@@ -59,9 +61,9 @@ private:
 
 	//returns node at position
 	void FindNode(NodeType*, float, float, float&);
+
 	//determines which triangle inside the node is located above
 	bool CheckHeightOfTriangle(float, float, float&, float[3], float[3], float[3]);
-
 
 	int m_triangleCount, m_drawCount;
 	VertexType* m_vertexList;

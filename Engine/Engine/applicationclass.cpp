@@ -1,13 +1,12 @@
-////////////////////////////////////////////////////////////////////////////////
-// Filename: applicationclass.cpp
-////////////////////////////////////////////////////////////////////////////////
 #include "applicationclass.h"
 
-
+//init all variables at creation
 ApplicationClass::ApplicationClass()
 {
+	//start offf with Intro
 	currentGameState = INTRO;
 
+	//reset all pointers to 0 (nno particular order)
 	m_Input = 0;
 	m_Direct3D = 0;
 	m_Camera = 0;
@@ -15,23 +14,25 @@ ApplicationClass::ApplicationClass()
 
 	m_FontShader = 0;
 	m_Text = 0;
-	m_pointsCollected = 0;
-
 	m_TerrainShader = 0;
 	m_SphereShader = 0;
+
 	m_Light = 0;
 	m_Frustum = 0;
 	m_QuadTree = 0;
-
 	m_DungeonGenerator = 0;
-	m_dungeonRecentlyCreated = false;
 
 	m_ColorFilterShader = 0;
 	m_RenderTexture = 0;
 	m_PostProcessedTexture = 0;
 	m_FullScreenWindow = 0;
-	
 	m_TextureShader = 0;
+
+	//reset collected points to 0
+	m_pointsCollected = 0;
+
+	//since dungeon is not created at this point, reset the boolean variable for it
+	m_dungeonRecentlyCreated = false;
 }
 ApplicationClass::ApplicationClass(const ApplicationClass& other)
 {
@@ -41,18 +42,18 @@ ApplicationClass::~ApplicationClass()
 {
 }
 
+//initialization at start
 bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeight)
 {
 	bool result = false;
 
-	//--- set up the rendering variables for rednering the loading screen
+	//--- set up the rendering variables for rednering the loading screen first
 
-	//init direct 3D object - handles communication with video card
+	//create and init direct 3D object - handles communication with video card
 	m_Direct3D = new D3DClass;
 	if (!m_Direct3D)
 		return false;
 
-	// Initialize the Direct3D object.
 	result = m_Direct3D->Initialize(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
 	if (!result)
 	{
@@ -60,20 +61,18 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
-	//init camera object - handles the 3D rendering (gets position from position class)
+	//create and init camera object - handles the 3D rendering (gets position from position class)
 	m_Camera = new CameraClass;
 	if (!m_Camera)
 		return false;
 
-	//get base view matrix to handle the 2D rendering later
+	//get base view matrix to handle the 2D rendering properly later
+	//otherwise the app tries to render the 2D texture from the side, resulting in weird results
 	m_Camera->SetPosition(0.0f, 0.0f, -1.0f);
 	m_Camera->Render();
 	m_Camera->GetViewMatrix(m_baseViewMatrix);
 
-	//init y offset - camera acts as head while the position object is the body -> cmare needs to be over the body
-	float cameraOffset = 2.0f;
-
-	//init the full screen ortho window object
+	//create and init init the full screen ortho window object - acts as reference for rendering a 2D texture to the screen
 	m_FullScreenWindow = new OrthoWindowClass;
 	if (!m_FullScreenWindow)
 		return false;
@@ -85,7 +84,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
-	//init font shader
+	//create and init font shader - shader for rendering text
 	m_FontShader = new FontShaderClass;
 	if (!m_FontShader)
 		return false;
@@ -97,13 +96,12 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
-	//init text object
+	//create and init text object - hold all string in special sentence objects to render them
 	m_Text = new TextClass;
 	if (!m_Text)
-	{
 		return false;
-	}
 
+	//inits intro and end screen by itself at this point, since no external variables are necessary for them
 	result = m_Text->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, screenWidth, screenHeight, m_baseViewMatrix);
 	if (!result)
 	{
@@ -112,18 +110,20 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	}
 
 
-	//---- render the intro screen to have something on the screen while loading
+	//---- render the intro screen to have something on the screen while loading the rest
 
-	// Clear the scene.
+	//reset scene (to black screen)
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
-	// Turn off the Z buffer to begin all 2D rendering.
+
+	//when rendering 2D, we can turn the Z buffer off
 	m_Direct3D->TurnZBufferOff();
 
-	//get world and ortho matrix
+	//get world and ortho matrix in order to render
 	D3DXMATRIX worldMatrix, orthoMatrix;
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 	m_Direct3D->GetOrthoMatrix(orthoMatrix);
 
+	//render the text (takes game state into account to decide what to render)
 	result = m_Text->Render(m_Direct3D->GetDeviceContext(), m_FontShader, worldMatrix, orthoMatrix, (int)currentGameState);
 	if (!result)
 		return false;
@@ -131,13 +131,13 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	//turn z buffer back on
 	m_Direct3D->TurnZBufferOn();
 
-	// Present the rendered scene to the screen.
+	//end scene + presents rendered result to screen
 	m_Direct3D->EndScene();
 
 
 	//------ creating the dungeon
 
-	//init dungeon generator - handles all issues with the dungeon itself
+	//create and init dungeon generator - handles all issues with the dungeon itself (procedural generation, spawning objects, ...)
 	m_DungeonGenerator = new DungeonGeneratorClass;
 	if(!m_DungeonGenerator)
 		return false;
@@ -149,7 +149,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
-	//create a new dungeon
+	//create a new dungeon (for now, just for 9 rooms)
 	result = m_DungeonGenerator->GenerateNewDungeon(DUNGEON_ROOMS, m_Direct3D);
 	if(!result)
 	{
@@ -158,9 +158,9 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	}
 
 
-	//----- setting up the rest of the rendering
+	//----- setting up the rest of the objects for rendering
 
-	//init terrain object
+	//create and init terrain object
 	m_Terrain = new TerrainClass;
 	if(!m_Terrain)
 		return false;
@@ -172,12 +172,12 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
-	//init frustum object
+	//create and init frustum object - handles visibility issues
 	m_Frustum = new FrustumClass;
 	if (!m_Frustum)
 		return false;
 
-	//init quad tree object
+	//create and init quad tree object - breaks terrain down into smaller chunks to only those chunks which are (potentially) visible to the player
 	m_QuadTree = new QuadTreeClass;
 	if (!m_QuadTree)
 		return false;
@@ -189,9 +189,19 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
+	//create and init light object - directional light to illuminate the scene
+	m_Light = new LightClass;
+	if (!m_Light)
+		return false;
+
+	m_Light->SetAmbientColor(0.05f, 0.05f, 0.05f, 1.0f);
+	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
+	m_Light->SetDirection(-0.5f, -1.0f, 0.0f);
+
+
 	//---- init shaders for the terrain and the collectibles
 
-	//init terrain shader
+	//create and init terrain shader
 	m_TerrainShader = new TerrainShaderClass;
 	if(!m_TerrainShader)
 		return false;
@@ -203,7 +213,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
-	//init sphere shader
+	//create and init sphere shader - used for collectible objects
 	m_SphereShader = new SphereShaderClass;
 	if(!m_SphereShader)
 		return false;
@@ -218,110 +228,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 
 	//----- init shaders for post processing
 
-	//init color filter shader
-	m_ColorFilterShader = new ColorFilterShaderClass;
-	if (!m_ColorFilterShader)
-		return false;
-
-	result = m_ColorFilterShader->Initialize(m_Direct3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the color filter shader object.", L"Error", MB_OK);
-		return false;
-	}
-
-	//----- init textures for post processing
-
-	//init final texture for post processing
-	m_PostProcessedTexture = new RenderTextureClass;
-	if(!m_PostProcessedTexture)
-		return false;
-
-	result = m_PostProcessedTexture->Initialize(m_Direct3D->GetDevice(), screenWidth, screenHeight, SCREEN_DEPTH, SCREEN_NEAR);
-	if(!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the post processing render to texture object.", L"Error", MB_OK);
-		return false;
-	}
-
-	//init light object
-	m_Light = new LightClass;
-	if(!m_Light)
-		return false;
-
-	m_Light->SetAmbientColor(0.05f, 0.05f, 0.05f, 1.0f);
-	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
-	m_Light->SetDirection(-0.5f, -1.0f, 0.0f);
-
-
-	//--- set variables for movement and navigation
-
-	//init input object - handles input from keyboard and mouse
-	m_Input = new InputClass;
-	if (!m_Input)
-		return false;
-
-	result = m_Input->Initialize(hinstance, hwnd, screenWidth, screenHeight);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the input object.", L"Error", MB_OK);
-		return false;
-	}
-
-	//init timer object -> return frame time 
-	m_Timer = new TimerClass;
-	if (!m_Timer)
-		return false;
-
-	result = m_Timer->Initialize();
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the timer object.", L"Error", MB_OK);
-		return false;
-	}
-
-	//init position object - handles all physical movement in the 3D world (e.g. collision)
-	m_Position = new PositionClass;
-	if (!m_Position)
-		return false;
-
-	//get spawn position in dungeon
-	float startPosX = 0.0f, startPosY = 0.0f, startPosZ = 0.0f;
-	m_DungeonGenerator->GetSpawningCoord(startPosX, startPosY, startPosZ);
-
-	// Set the initial position to the spawning position in the dungeon
-	m_Position->SetPosition(startPosX, startPosY, startPosZ);
-	m_Position->SetCollisionRadius(1.0f);
-	m_Position->SetAllowedUpwardDifference(0.1f);
-
-	//set the initial position equal to the one from the position object
-	m_Camera->SetPosition(startPosX, startPosY + cameraOffset, startPosZ);
-	m_Camera->SetYOffset(cameraOffset);
-
-
-	//----- init objects for additional information on the screen
-
-	//set text for collected points
-	result = m_Text->SetPoints(m_pointsCollected, m_DungeonGenerator->GetTotalPointCount(), m_Direct3D->GetDeviceContext());
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not display points.", L"Error", MB_OK);
-		return false;
-	}
-
-	//init render to texture object (target for rendering the complete scene to)
-	m_RenderTexture = new RenderTextureClass;
-	if (!m_RenderTexture)
-		return false;
-
-	result = m_RenderTexture->Initialize(m_Direct3D->GetDevice(), screenWidth, screenHeight, SCREEN_DEPTH, SCREEN_NEAR);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the render to texture object.", L"Error", MB_OK);
-		return false;
-	}
-
-	//init texture shader (rendering final texture to screen)
+	//create and init texture shader (rendering final texture to screen)
 	m_TextureShader = new TextureShaderClass;
 	if (!m_TextureShader)
 		return false;
@@ -333,13 +240,118 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 		return false;
 	}
 
+	//create and init color filter shader - for now, it removes the information for the color green
+	m_ColorFilterShader = new ColorFilterShaderClass;
+	if (!m_ColorFilterShader)
+		return false;
+
+	result = m_ColorFilterShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the color filter shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	//create and init render to texture object (target for rendering the complete scene at first)
+	m_RenderTexture = new RenderTextureClass;
+	if (!m_RenderTexture)
+		return false;
+
+	result = m_RenderTexture->Initialize(m_Direct3D->GetDevice(), screenWidth, screenHeight, SCREEN_DEPTH, SCREEN_NEAR);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the render to texture object.", L"Error", MB_OK);
+		return false;
+	}
+	
+	//create and init the final texture for post processing
+	m_PostProcessedTexture = new RenderTextureClass;
+	if(!m_PostProcessedTexture)
+		return false;
+
+	result = m_PostProcessedTexture->Initialize(m_Direct3D->GetDevice(), screenWidth, screenHeight, SCREEN_DEPTH, SCREEN_NEAR);
+	if(!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the post processing render to texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+
+	//--- set variables for movement and navigation
+
+	//create and init input object - handles input from keyboard and mouse
+	m_Input = new InputClass;
+	if (!m_Input)
+		return false;
+
+	result = m_Input->Initialize(hinstance, hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the input object.", L"Error", MB_OK);
+		return false;
+	}
+
+	//create and init timer object -> returns frame time, e.g. necessary for physics calculation
+	m_Timer = new TimerClass;
+	if (!m_Timer)
+		return false;
+
+	result = m_Timer->Initialize();
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the timer object.", L"Error", MB_OK);
+		return false;
+	}
+
+	//create and init position object - handles all physical movement in the 3D world (e.g. collision)
+	m_Position = new PositionClass;
+	if (!m_Position)
+		return false;
+
+
+	//get spawn position of player in dungeon
+	float startPosX = 0.0f, startPosY = 0.0f, startPosZ = 0.0f;
+	m_DungeonGenerator->GetSpawningCoord(startPosX, startPosY, startPosZ);
+
+	//set initial position of player to this position
+	m_Position->SetPosition(startPosX, startPosY, startPosZ);
+	
+	//add collision radius to ccalculate collision with walls in time
+	m_Position->SetCollisionRadius(0.5f);
+
+	//allowed upward(s) difference - used to decide how much slope the char is able to go upwards
+	//initialized for the ground only (not 0.0f, since float variables tend to have some calculation issues)
+	m_Position->SetAllowedUpwardDifference(0.1f);
+
+
+	//set y offset for camera - camera acts as head while the position object is the body
+	//--> camera needs fixed distance to position
+	float cameraOffset = 2.0f;
+	m_Camera->SetYOffset(cameraOffset);
+
+	//set the initial position equal to the one from the position object (+ y offset)
+	m_Camera->SetPosition(startPosX, startPosY + cameraOffset, startPosZ);
+
+
+	//set text for collected points
+	result = m_Text->SetPoints(m_pointsCollected, m_DungeonGenerator->GetTotalPointCount(), m_Direct3D->GetDeviceContext());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not display points.", L"Error", MB_OK);
+		return false;
+	}
+
+
+	//set game state to game
 	currentGameState = GAME;
 
 	return true;
 }
 
+//function to clean up memory when ending the application
 void ApplicationClass::Shutdown()
 {
+	//shut down all objects (if posssible), delete their data and reset all pointers to them
 	if(m_FullScreenWindow)
 	{
 		m_FullScreenWindow->Shutdown();
@@ -408,7 +420,6 @@ void ApplicationClass::Shutdown()
 		m_SphereShader = 0;
 	}
 
-	// Release the text object.
 	if(m_Text)
 	{
 		m_Text->Shutdown();
@@ -416,7 +427,6 @@ void ApplicationClass::Shutdown()
 		m_Text = 0;
 	}
 
-	// Release the font shader object.
 	if(m_FontShader)
 	{
 		m_FontShader->Shutdown();
@@ -424,7 +434,6 @@ void ApplicationClass::Shutdown()
 		m_FontShader = 0;
 	}
 
-	// Release the terrain object.
 	if(m_Terrain)
 	{
 		m_Terrain->Shutdown();
@@ -432,14 +441,12 @@ void ApplicationClass::Shutdown()
 		m_Terrain = 0;
 	}
 
-	// Release the camera object.
 	if(m_Camera)
 	{
 		delete m_Camera;
 		m_Camera = 0;
 	}
 
-	// Release the Direct3D object.
 	if(m_Direct3D)
 	{
 		m_Direct3D->Shutdown();
@@ -453,14 +460,12 @@ void ApplicationClass::Shutdown()
 		m_Timer = 0;
 	}
 
-	// Release the position object.
 	if (m_Position)
 	{
 		delete m_Position;
 		m_Position = 0;
 	}
 
-	// Release the input object.
 	if(m_Input)
 	{
 		m_Input->Shutdown();
@@ -471,49 +476,50 @@ void ApplicationClass::Shutdown()
 	return;
 }
 
-
+//function called each frame
 bool ApplicationClass::Frame()
 {
 	bool result;
 
-	// Read the user input.
+	//get user input for this frame
 	result = m_Input->Frame();
 	if(!result)
-	{
 		return false;
-	}
 	
-	// Check if the user pressed escape and wants to exit the application.
+	//end app if the usser clicked escape
 	if(m_Input->IsEscapePressed() == true)
 		return false;
 
+	//game code  per frame
 	if (currentGameState == GAME)
 	{
 		//update the frame time
 		m_Timer->Frame();
 
-		//record old position
+		//record old position (necessary for resetting player when stuck into a wall)
 		float posX, posY, posZ;
 		m_Position->GetPosition(posX, posY, posZ);
 
+		//get height for old position
 		bool foundHeight = false;
 		foundHeight = m_QuadTree->GetHeightAtPosition(posX, posZ, posY);
 
-		// Set the frame time for calculating the updated position.
-		// and calculate physics
+		//calculated new position and calculate gravity effect
 		m_Position->Frame(m_Timer->GetTime(), posY, foundHeight);
 
-		//record position after physics are calulated
+		//overwrite old position with this one
 		m_Position->GetPosition(posX, posY, posZ);
 
-		// Do the frame input processing.
+		//handle the input
 		result = HandleInput();
 		if (!result)
 			return false;
 
-		//handle collisions with the wall
+		//record new position (after calulating the movement)
 		float newX = 0.0f, newY = 0.0f, newZ = 0.0f;
 		m_Position->GetPosition(newX, newY, newZ);
+
+		//handle collisions with the wall, resets the new position to the old one if collision with wall was detected
 		HandleWallCollision(newX, newY, newZ, posX, posY, posZ);
 		m_Position->SetPosition(newX, newY, newZ);
 
@@ -521,34 +527,37 @@ bool ApplicationClass::Frame()
 		result = m_DungeonGenerator->CollectibleAtPosition(newX, newY, newZ);
 		if (result)
 		{
+			//update point counter and uppdate the text for it
 			m_pointsCollected++;
 			result = m_Text->SetPoints(m_pointsCollected, m_DungeonGenerator->GetTotalPointCount(), m_Direct3D->GetDeviceContext());
 			if (!result)
 				return false;
+
+			//set game state to END if the player got all available points
+			if (m_pointsCollected >= m_DungeonGenerator->GetTotalPointCount())
+				currentGameState = END;
 		}
 
-		// Get the view point position/rotation.
+		//get rotation
 		float rotX, rotY, rotZ;
 		m_Position->GetRotation(rotX, rotY, rotZ);
 
-		// Set the position of the camera.
+		//sync camera's position and rotation with the one from the position object
 		m_Camera->SetPosition(newX, newY + m_Camera->GetYOffset(), newZ);
 		m_Camera->SetRotation(rotX, rotY, rotZ);
 
-		// Render the graphics.
+		//finally, render graphics
 		result = RenderGraphics();
 		if (!result)
 			return false;
-
-		if (m_pointsCollected >= m_DungeonGenerator->GetTotalPointCount())
-			currentGameState = END;
 	}
 	//render end screen
 	else
 	{
-		// Clear the scene.
+		//reset scene (to black screen)
 		m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
-		// Turn off the Z buffer to begin all 2D rendering.
+
+		//when rendering 2D, we can turn the Z buffer off
 		m_Direct3D->TurnZBufferOff();
 
 		//get world and ortho matrix
@@ -556,6 +565,7 @@ bool ApplicationClass::Frame()
 		m_Direct3D->GetWorldMatrix(worldMatrix);
 		m_Direct3D->GetOrthoMatrix(orthoMatrix);
 
+		//render text (end screen)
 		bool result = m_Text->Render(m_Direct3D->GetDeviceContext(), m_FontShader, worldMatrix, orthoMatrix, (int)currentGameState);
 		if (!result)
 			return false;
@@ -563,10 +573,10 @@ bool ApplicationClass::Frame()
 		//turn z buffer back on
 		m_Direct3D->TurnZBufferOn();
 
-		// Present the rendered scene to the screen.
+		//end scene + presents rendered result to screen
 		m_Direct3D->EndScene();
 
-		//handle the input for this frame
+		//handle the input for this frame (otherwise we would get stuck in this state)
 		result = HandleInput();
 		if (!result)
 			return false;
@@ -576,51 +586,54 @@ bool ApplicationClass::Frame()
 	return result;
 }
 
+
+//functions depending on input
 bool ApplicationClass::HandleInput()
 {
-	bool keyDown;
+	bool result;
 
 	//handle the movement and rotation input only when in the game
 	if (currentGameState == GAME)
 	{
-		keyDown = m_Input->IsUpPressed();
-		m_Position->MoveForward(keyDown);
+		//handle movement
+		result = m_Input->IsUpPressed();
+		m_Position->MoveForward(result);
 
-		keyDown = m_Input->IsRightPressed();
-		m_Position->TurnRight(keyDown);
+		result = m_Input->IsDownPressed();
+		m_Position->MoveBackward(result);
 
-		keyDown = m_Input->IsDownPressed();
-		m_Position->MoveBackward(keyDown);
+		//handle rotation
+		result = m_Input->IsLeftPressed();
+		m_Position->TurnLeft(result);
 
-		keyDown = m_Input->IsLeftPressed();
-		m_Position->TurnLeft(keyDown);
+		result = m_Input->IsRightPressed();
+		m_Position->TurnRight(result);
 
-		keyDown = m_Input->IsAPressed();
-		m_Position->MoveUpward(keyDown);
+		result = m_Input->IsPgUpPressed();
+		m_Position->LookUpward(result);
 
-		keyDown = m_Input->IsZPressed();
-		m_Position->MoveDownward(keyDown);
+		result = m_Input->IsPgDownPressed();
+		m_Position->LookDownward(result);
 
-		keyDown = m_Input->IsPgUpPressed();
-		m_Position->LookUpward(keyDown);
-
-		keyDown = m_Input->IsPgDownPressed();
-		m_Position->LookDownward(keyDown);
-
-		keyDown = m_Input->IsSpacebarPressed();
-		if (keyDown)
+		//handle ump
+		result = m_Input->IsSpacebarPressed();
+		if (result)
 			m_Position->Jump();
 	}
 
 	//creating a new dungeon
-	keyDown = m_Input->IsPPressed();
-	if(keyDown && !m_dungeonRecentlyCreated)
+	result = m_Input->IsPPressed();
+
+	//m_dungeonRecentlyCreated - makes sure that the dungein is only recreated once after pressing the button dow
+	if (result && !m_dungeonRecentlyCreated)
 	{
-		//----- render intro screen to see seomething while loading
+		//----- render intro screen to see something while loading
 		currentGameState = INTRO;
-		// Clear the scene.
+
+		//reset scene (to black screen)
 		m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
-		// Turn off the Z buffer to begin all 2D rendering.
+
+		//when rendering 2D, we can turn the Z buffer off
 		m_Direct3D->TurnZBufferOff();
 
 		//get world and ortho matrix
@@ -628,6 +641,7 @@ bool ApplicationClass::HandleInput()
 		m_Direct3D->GetWorldMatrix(worldMatrix);
 		m_Direct3D->GetOrthoMatrix(orthoMatrix);
 
+		//render text
 		bool result = m_Text->Render(m_Direct3D->GetDeviceContext(), m_FontShader, worldMatrix, orthoMatrix, (int)currentGameState);
 		if (!result)
 			return false;
@@ -635,11 +649,11 @@ bool ApplicationClass::HandleInput()
 		//turn z buffer back on
 		m_Direct3D->TurnZBufferOn();
 
-		// Present the rendered scene to the screen.
+		//end scene + presents rendered result to screen
 		m_Direct3D->EndScene();
 
 
-		//------ create new dungeon
+		//------ create new dungeon (same function as in initialization, but without creating new objects --> no extra function)
 		m_DungeonGenerator->GenerateNewDungeon(DUNGEON_ROOMS, m_Direct3D);
 
 		m_Terrain->Shutdown();
@@ -652,16 +666,15 @@ bool ApplicationClass::HandleInput()
 		if(!result)
 			return false;
 
-		m_dungeonRecentlyCreated = true;
-
 		//reset position and camera with spawning coordinate from dungeon
 		float posX, posY, posZ;
 		m_DungeonGenerator->GetSpawningCoord(posX, posY, posZ);
+
 		m_Position->SetPosition(posX, posY, posZ);
 		m_Camera->SetPosition(posX, posY + m_Camera->GetYOffset(), posZ);
 		m_Camera->SetRotation(0.0f, 0.0f, 0.0f);
 
-		//reset points and game state
+		//reset points and go to game state
 		m_pointsCollected = 0;
 		currentGameState = GAME;
 
@@ -669,14 +682,17 @@ bool ApplicationClass::HandleInput()
 		result = m_Text->SetPoints(m_pointsCollected, m_DungeonGenerator->GetTotalPointCount(), m_Direct3D->GetDeviceContext());
 		if (!result)
 			return false;
+
+		m_dungeonRecentlyCreated = true;
 	}
-	else if(!keyDown && m_dungeonRecentlyCreated)
+	//reset when releasing the key after regeneration
+	else if (!result && m_dungeonRecentlyCreated)
 		m_dungeonRecentlyCreated = false;
 
 	return true;
 }
 
-
+//rendering all graphics
 bool ApplicationClass::RenderGraphics()
 {
 	bool result = false;
@@ -686,106 +702,118 @@ bool ApplicationClass::RenderGraphics()
 	if(!result)
 		return false;
 
+	//render the post proccessing stuff
 	result = RenderPostProcessing();
 	if(!result)
 		return false;
 
-	// Clear the scene.
+	//reset scene (to black screen)
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
 
-	//m_Camera->Render();
-	
-	// Turn off the Z buffer to begin all 2D rendering.
+	//when rendering 2D, we can turn the Z buffer off
 	m_Direct3D->TurnZBufferOff();
 
-	//render the scene
+	//get world and ortho matrix
 	D3DXMATRIX worldMatrix, orthoMatrix;
 	m_Direct3D->GetWorldMatrix(worldMatrix);
-	//m_Camera->GetViewMatrix(viewMatrix);
 	m_Direct3D->GetOrthoMatrix(orthoMatrix);
-	//m_RenderTexture->GetOrthoMatrix(orthoMatrix);
 
+
+	//set render target to the plane
 	m_FullScreenWindow->Render(m_Direct3D->GetDeviceContext());
 
-	//render the last rendered texture on screen to see the result
+	//render the last rendered texture via the basic texture shader
 	result = m_TextureShader->Render(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(),
 		worldMatrix, m_baseViewMatrix, orthoMatrix, m_PostProcessedTexture->GetShaderResourceView());
 
 	if(!result)
 		return false;
 
-	// Turn on the alpha blending before rendering the text.
+
+	//use alpha blending to render text over texture without overwriting all of the previous one
 	m_Direct3D->TurnOnAlphaBlending();
 
-	// Render the text user interface elements.
+	//render text
 	result = m_Text->Render(m_Direct3D->GetDeviceContext(), m_FontShader, worldMatrix, orthoMatrix, (int)currentGameState);
 	if(!result)
 		return false;
 		
-	// Turn off alpha blending after rendering the text.
+	//turn alpha blending off
 	m_Direct3D->TurnOffAlphaBlending();
+
 
 	//turn z buffer back on
 	m_Direct3D->TurnZBufferOn();
 
-	// Present the rendered scene to the screen.
+	//end scene + presents rendered result to screen
 	m_Direct3D->EndScene();
 
 	return true;
 }
 
+//renders 3D scene to 2D texture
 bool ApplicationClass::RenderSceneToTexture()
 {
 	//set render target to render to texture object
 	m_RenderTexture->SetRenderTarget(m_Direct3D->GetDeviceContext());
 
-	//clear render to texture
+	//clear texture
 	m_RenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
 
 	// Generate the view matrix based on the camera's position.
 	m_Camera->Render();
 	
-	// Get the world, view, projection, and ortho matrices from the camera and Direct3D objects.
+	// Get the world, view and projection matrix from the camera and Direct3D
 	D3DXMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 
 	bool result = false;
-	//render all collectibles (for now, regardless of visibility)
+
+	//render all collectibles (regardless of visibility)
 	std::deque<DungeonGeneratorClass::CollectibleData*> *modelList = m_DungeonGenerator->GetDungeonData()->collectibles;
 	DungeonGeneratorClass::CollectibleData* currentModel;
 	float posX, posY, posZ;
 
+	//go through complete list
 	if(modelList)
 	{
+		//push 0 as end marker in the back
 		modelList->push_back(0);
 		currentModel = modelList->front();
 
+		//take always the 1st element from the front and delete it from the lisst
 		modelList->pop_front();
 		m_Direct3D->GetWorldMatrix(worldMatrix);
 
+		//as long as we do not reach the end
 		while(currentModel)
 		{
+			//use moddels position to get appropriate world matrix
 			currentModel->model->GetPosition(posX, posY, posZ);
 			D3DXMatrixTranslation(&worldMatrix, posX, posY, posZ);
 
-			//set shader parameters for each model individually (because world matrix changed)
+			//set shader parameters for each model individually (because world matrix changes each time)
 			result = m_SphereShader->SetShaderParameters(m_Direct3D->GetDeviceContext(), worldMatrix, viewMatrix, projectionMatrix,
 				m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection(), currentModel->model->GetTexture());
 			if (!result)
 				return false;
 
+			//render the moel via the sphere shader
 			currentModel->model->Render(m_Direct3D->GetDeviceContext());
 			m_SphereShader->RenderShader(m_Direct3D->GetDeviceContext(), currentModel->model->GetIndexCount());
 			if(!result)
 				return false;
 
+			//push object back into list, get the next one and delete it from the list
 			modelList->push_back(currentModel);
 			currentModel = modelList->front();
 			modelList->pop_front();
 		}
 	}
+
+	//reset world matrix (otherwise we get weird results in later renderings)
 	D3DXMatrixTranslation(&worldMatrix, 0.0f, 0.0f, 0.0f);
 	
 	//construct frustum based on view and projection matrix
@@ -810,25 +838,28 @@ bool ApplicationClass::RenderSceneToTexture()
 	return true;
 }
 
+//renders post processing effect onto 2D texture
 bool ApplicationClass::RenderPostProcessing()
 {
 	//set post processing texture as target and clean it
 	m_PostProcessedTexture->SetRenderTarget(m_Direct3D->GetDeviceContext());
 	m_PostProcessedTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
 
-	D3DXMATRIX worldMatrix, orthoMatrix;
+	//get world matrix from Direct3D
+	D3DXMATRIX worldMatrix;
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 
-	//get orttho mattrix from texture, since the dimensions can differ
+	//get ortho matrix from texture, since the dimensions differs to the one fromm Diret3D
+	D3DXMATRIX orthoMatrix;
 	m_PostProcessedTexture->GetOrthoMatrix(orthoMatrix);
 
 	//prepare 2D rendering by turning the z buffer off
 	m_Direct3D->TurnZBufferOff();
 
-	//put the index and vertex buffer of the full screen into the graphics pipeline
+	//put the index and vertex buffer of the full screen into the graphics pipeline to draw on it
 	m_FullScreenWindow->Render(m_Direct3D->GetDeviceContext());
 
-	//render the full screen window using the post processing shader
+	//render on full screen window (plane) using the post processing shader
 	bool result = false;
 	result = m_ColorFilterShader->Render(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(),
 		worldMatrix, m_baseViewMatrix, orthoMatrix, m_RenderTexture->GetShaderResourceView());
@@ -849,21 +880,27 @@ bool ApplicationClass::RenderPostProcessing()
 }
 
 
+//handles issues with call clipping / collision
 void ApplicationClass::HandleWallCollision(float& posX, float& posY, float& posZ, float oldX, float oldY, float oldZ)
 {
+	//st collision radius and allowed upward(s) difference
 	float collisionRadius = 0.0f;
 	m_Position->GetCollisionRadius(collisionRadius);
+
 	float allowedUpwardsDifference = 0.0f;
 	m_Position->GetAllowedUpwardDifference(allowedUpwardsDifference);
 
 	//check if position has clipped with wall - check this with the collision radius in all 4 corners
 	bool clipWithWall = false;
+	float tmpX = 0.0f, tmpZ = 0.0f, height = 0.0f;
+
 	for(int i = 0; i < 4; i++)
 	{
-		float tmpX = posX;
-		float tmpZ = posZ;
-		float height = 0.0f;
+		tmpX = posX;
+		tmpZ = posZ;
+		height = 0.0f;
 
+		//check specific corner, depending of iteration cycle
 		if(i == 0)
 			tmpX += collisionRadius;
 		else if(i == 1)
@@ -873,6 +910,7 @@ void ApplicationClass::HandleWallCollision(float& posX, float& posY, float& posZ
 		else
 			tmpZ -= collisionRadius;
 
+		//get height and check if it is higher  than allowed
 		bool foundHeight = m_QuadTree->GetHeightAtPosition(tmpX, tmpZ, height);
 		if(foundHeight)
 		{
@@ -883,15 +921,16 @@ void ApplicationClass::HandleWallCollision(float& posX, float& posY, float& posZ
 		else
 			clipWithWall = true;
 
+		//break out of loop if clipping with wall was confirmed
 		if(clipWithWall)
 			break;
 	}
 
 	//in case of collision with wall -> set position back to the old one
-	if(clipWithWall){
+	if(clipWithWall)
+	{
 		posX = oldX;
 		posY = oldY;
 		posZ = oldZ;
-		//m_Position->SetPosition(x, y, z);
 	}
 }
