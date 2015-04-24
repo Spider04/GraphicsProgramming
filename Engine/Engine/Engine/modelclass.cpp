@@ -183,7 +183,7 @@ bool ModelClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
 
 void ModelClass::Shutdown()
 {
-	//release texture
+	//release all pointers
 	if (m_Texture)
 	{
 		m_Texture->Shutdown();
@@ -191,21 +191,18 @@ void ModelClass::Shutdown()
 		m_Texture = 0;
 	}
 
-	//release index buffer
 	if (m_indexBuffer)
 	{
 		m_indexBuffer->Release();
 		m_indexBuffer = 0;
 	}
 
-	//release vertex buffer
 	if (m_vertexBuffer)
 	{
 		m_vertexBuffer->Release();
 		m_vertexBuffer = 0;
 	}
 
-	//release rest of the model data
 	if (m_model)
 	{
 		delete[] m_model;

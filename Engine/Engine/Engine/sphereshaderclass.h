@@ -7,6 +7,7 @@
 #include <fstream>
 using namespace std;
 
+//shader class for orbs
 class SphereShaderClass
 {
 public:

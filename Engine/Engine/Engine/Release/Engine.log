@@ -1,0 +1,47 @@
+﻿Build started 24/04/2015 09:51:38.
+     1>Project "C:\Users\1404272\Downloads\Engine\Engine\Engine.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Release\Engine.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt applicationclass.cpp main.cpp systemclass.cpp
+         applicationclass.cpp
+         main.cpp
+         systemclass.cpp
+       Link:
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\1404272\Downloads\Engine\Release\Engine.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Release\Engine.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\1404272\Downloads\Engine\Release\Engine.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\1404272\Downloads\Engine\Release\Engine.lib" /MACHINE:X86 Release\applicationclass.obj
+         Release\cameraclass.obj
+         Release\colorfiltershaderclass.obj
+         Release\d3dclass.obj
+         Release\dungeon_generator.obj
+         Release\fontclass.obj
+         Release\fontshaderclass.obj
+         Release\frustumclass.obj
+         Release\inputclass.obj
+         Release\lightclass.obj
+         Release\main.obj
+         Release\modelclass.obj
+         Release\orthowindowclass.obj
+         Release\positionclass.obj
+         Release\quadtreeclass.obj
+         Release\rendertextureclass.obj
+         Release\sphereshaderclass.obj
+         Release\systemclass.obj
+         Release\terrainclass.obj
+         Release\terrainshaderclass.obj
+         Release\textclass.obj
+         Release\textureclass.obj
+         Release\textureshaderclass.obj
+         Release\timerclass.obj
+         Generating code
+         Finished generating code
+         Engine.vcxproj -> C:\Users\1404272\Downloads\Engine\Release\Engine.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\Users\1404272\Downloads\Engine\Release\Engine.exe;#1" /manifest Release\Engine.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "Release\Engine.unsuccessfulbuild".
+         Touching "Release\Engine.lastbuildstate".
+     1>Done Building Project "C:\Users\1404272\Downloads\Engine\Engine\Engine.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:02.88

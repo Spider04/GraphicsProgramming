@@ -18,7 +18,7 @@ bool TextureShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	//init vertex and pixel shader
 	bool result = false;
-	result = InitializeShader(device, hwnd, L"../Engine/shader/texture.vs", L"../Engine/shader/texture.ps");
+	result = InitializeShader(device, hwnd, L"shader/texture.vs", L"shader/texture.ps");
 
 	return result;
 }

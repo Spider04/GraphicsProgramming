@@ -18,7 +18,7 @@ bool ColorFilterShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	//init vertex and pixel shader
 	bool result;
-	result = InitializeShader(device, hwnd, L"../Engine/shader/colorFilter.vs", L"../Engine/shader/colorFilter.ps");
+	result = InitializeShader(device, hwnd, L"shader/colorFilter.vs", L"shader/colorFilter.ps");
 
 	return result;
 }

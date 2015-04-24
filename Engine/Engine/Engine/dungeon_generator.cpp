@@ -4,8 +4,6 @@ DungeonGeneratorClass::DungeonGeneratorClass()
 	: m_dungeonData(0)
 	, m_roomAmount(0)
 	, m_totalPointAmount(0)
-	/*, openList(0)
-	, closedList(0)*/
 {
 	//init all pointers for the rooms
 	for (int i = 0; i < DUNGEON_ROOMS; i++)
@@ -286,6 +284,7 @@ bool DungeonGeneratorClass::GenerateRoom(int areaWidth, int areaHeight, int star
 	}
 
 	//set allowed connections by hand for now - necessary to create valid connections
+	//expanding the dungeon to more rooms would mean to automate this process
 	if(m_roomAmount == 0){
 		m_roomData[m_roomAmount]->allowedConnections[0] = 1;
 		m_roomData[m_roomAmount]->allowedConnections[1] = 3;
@@ -955,7 +954,7 @@ bool DungeonGeneratorClass::SpawnCollectibles(RoomData* room, D3DClass* d3d)
 
 		//create new model for collectible (no instance, since I want to delete them one by one when collected)
 		ModelClass* newModel = new ModelClass;
-		result = newModel->Initialize(d3d->GetDevice(), "../Engine/data/sphere.txt", L"../Engine/data/red.dds");
+		result = newModel->Initialize(d3d->GetDevice(), "data/sphere.txt", L"data/red.dds");
 		if(!result)
 			return false;
 		newModel->SetPosition(posX, 1.0f, posZ);

@@ -18,7 +18,7 @@ SphereShaderClass::~SphereShaderClass()
 bool SphereShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
-	result = InitializeShader(device, hwnd, L"../Engine/shader/sphere.vs", L"../Engine/shader/sphere.ps");
+	result = InitializeShader(device, hwnd, L"shader/sphere.vs", L"shader/sphere.ps");
 	return result;
 }
 
@@ -184,6 +184,7 @@ void SphereShaderClass::Shutdown()
 
 void SphereShaderClass::ShutdownShader()
 {
+	//release all pointers from the sahder
 	if(m_lightBuffer)
 	{
 		m_lightBuffer->Release();

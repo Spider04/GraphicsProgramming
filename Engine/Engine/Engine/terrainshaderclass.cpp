@@ -18,7 +18,7 @@ TerrainShaderClass::~TerrainShaderClass()
 bool TerrainShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
-	result = InitializeShader(device, hwnd, L"../Engine/shader/terrain.vs", L"../Engine/shader/terrain.ps");
+	result = InitializeShader(device, hwnd, L"shader/terrain.vs", L"shader/terrain.ps");
 	return result;
 }
 
@@ -183,6 +183,7 @@ void TerrainShaderClass::Shutdown()
 
 void TerrainShaderClass::ShutdownShader()
 {
+	//release all pointers
 	if(m_lightBuffer)
 	{
 		m_lightBuffer->Release();

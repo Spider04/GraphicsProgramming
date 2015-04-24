@@ -35,7 +35,7 @@ bool TerrainClass::Initialize(ID3D11Device* device, DungeonGeneratorClass::Dunge
 	if(!result)
 		return false;
 
-	// Initialize vertex array that will hold the geometry
+	//init buffer / vertex array
 	result = InitializeBuffers(device);
 	return result;
 }
@@ -463,6 +463,7 @@ void TerrainClass::ShutdownHeightMap()
 }
 
 
+//getter functions for all textures
 ID3D11ShaderResourceView* TerrainClass::GetFloorTexture()
 {
 	return m_floorTexture->GetTexture();

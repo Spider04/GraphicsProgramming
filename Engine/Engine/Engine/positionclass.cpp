@@ -97,7 +97,7 @@ void PositionClass::Frame(float time, float floorHeight, bool onMesh)
 		}
 		else if(m_positionY > (floorHeight + 0.01f))
 		{
-			//drag the character down
+			//drag the character down (via gravity)
 			if(m_fallSpeed < m_fallSpeedMax)
 				m_fallSpeed += m_gravityForce * m_mass * time * 0.001f;
 
@@ -280,7 +280,7 @@ void PositionClass::LookDownward(bool keydown)
 	return;
 }
 
-
+//set and get collision radius
 void PositionClass::SetCollisionRadius(float newValue)
 {
 	m_collisionRadius = newValue;
@@ -290,6 +290,7 @@ void PositionClass::GetCollisionRadius(float& value)
 	value = m_collisionRadius;
 }
 
+//set and get allowed upwards difference
 void PositionClass::SetAllowedUpwardDifference(float newValue)
 {
 	m_allowedUpwardDifference = newValue;
@@ -299,7 +300,7 @@ void PositionClass::GetAllowedUpwardDifference(float& value)
 	value = m_allowedUpwardDifference;
 }
 
-
+//set gravity and jump force
 void PositionClass::SetGravityForce(float value)
 {
 	m_gravityForce = value;
@@ -309,6 +310,7 @@ void PositionClass::SetJumpForce(float value)
 	m_jumpForce = value;
 }
 
+//function when pressing the jump button
 void PositionClass::Jump()
 {
 	//only calculate new jump if the character is not currently in a jump

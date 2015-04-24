@@ -306,6 +306,7 @@ void QuadTreeClass::CreateTreeNode(NodeType* node, float positionX, float positi
 	return;
 }
 
+//count triangles in 3D space via given position and width (for cube)
 int QuadTreeClass::CountTriangles(float positionX, float positionZ, float width)
 {
 	int count = 0;

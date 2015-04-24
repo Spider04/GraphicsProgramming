@@ -32,7 +32,7 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 		return false;
 
 	bool result = false;
-	result = m_Font->Initialize(device, "../Engine/data/fontdata.txt", L"../Engine/data/font.dds");
+	result = m_Font->Initialize(device, "data/fontdata.txt", L"data/font.dds");
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the font object.", L"Error", MB_OK);
@@ -271,11 +271,14 @@ void TextClass::ReleaseSentence(SentenceType** sentence)
 bool TextClass::Render(ID3D11DeviceContext* deviceContext, FontShaderClass* FontShader, D3DXMATRIX worldMatrix, D3DXMATRIX orthoMatrix
 	, int gameStateIndex)
 {
-	//render the sentence
+	//render the sentence, based on game state
 	bool result = false;
+
+	//render points in GAME state
 	if (gameStateIndex == 1)
 		result = RenderSentence(m_pointsSentence, deviceContext, FontShader, worldMatrix, orthoMatrix);
 
+	//render intro sentences in INTRO state
 	else if (gameStateIndex == 0)
 	{
 		result = RenderSentence(m_introSentence0, deviceContext, FontShader, worldMatrix, orthoMatrix);
@@ -288,6 +291,8 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext, FontShaderClass* Font
 
 		result = RenderSentence(m_introSentence2, deviceContext, FontShader, worldMatrix, orthoMatrix);
 	}
+
+	//render the sentences for the end screen in END state
 	else
 	{
 		result = RenderSentence(m_endSentence0, deviceContext, FontShader, worldMatrix, orthoMatrix);

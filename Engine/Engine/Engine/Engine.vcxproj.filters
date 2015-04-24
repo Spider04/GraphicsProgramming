@@ -42,16 +42,16 @@
     <None Include="shader\sphere.vs">
       <Filter>Shader Files</Filter>
     </None>
-    <None Include="shader\texture.ps">
-      <Filter>Shader Files</Filter>
-    </None>
-    <None Include="shader\texture.vs">
-      <Filter>Shader Files</Filter>
-    </None>
     <None Include="shader\colorFilter.ps">
       <Filter>Shader Files</Filter>
     </None>
     <None Include="shader\colorFilter.vs">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="shader\texture.ps">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="shader\texture.vs">
       <Filter>Shader Files</Filter>
     </None>
   </ItemGroup>

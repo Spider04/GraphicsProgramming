@@ -79,10 +79,10 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 		dmScreenSettings.dmBitsPerPel = 32;
 		dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 
-		// Change the display settings to full screen.
+		//change display settings to full screen
 		ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN);
 
-		// Set the position of the window to the top left corner.
+		//set window in top left corner;
 		posX = posY = 0;
 	}
 	else

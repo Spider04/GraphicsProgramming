@@ -23,7 +23,7 @@ const int COLLECTIBLES_PER_ROOM = 1;
 const int COLLECTIBLES_MIN_DISTANCE_TO_WALL = 4;
 
 
-//the dungen in a nutshell
+//the dungeon in a nutshell
 class DungeonGeneratorClass
 {
 public:

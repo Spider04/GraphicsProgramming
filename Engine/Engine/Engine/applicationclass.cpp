@@ -3,10 +3,10 @@
 //init all variables at creation
 ApplicationClass::ApplicationClass()
 {
-	//start offf with Intro
+	//start off with Intro
 	currentGameState = INTRO;
 
-	//reset all pointers to 0 (nno particular order)
+	//reset all pointers to 0 (no particular order)
 	m_Input = 0;
 	m_Direct3D = 0;
 	m_Camera = 0;
@@ -47,7 +47,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 {
 	bool result = false;
 
-	//--- set up the rendering variables for rednering the loading screen first
+	//--- set up the rendering variables for rendering the loading screen first
 
 	//create and init direct 3D object - handles communication with video card
 	m_Direct3D = new D3DClass;
@@ -153,7 +153,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	if(!m_Terrain)
 		return false;
 
-	result = m_Terrain->Initialize(m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData(), L"../Engine/data/dirt01.dds", L"../Engine/data/rock.dds");
+	result = m_Terrain->Initialize(m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData(), L"data/dirt01.dds", L"data/rock.dds");
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the terrain object.", L"Error", MB_OK);
@@ -657,7 +657,7 @@ bool ApplicationClass::HandleInput()
 		m_DungeonGenerator->GenerateNewDungeon(DUNGEON_ROOMS, m_Direct3D);
 
 		m_Terrain->Shutdown();
-		result = m_Terrain->Initialize(m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData(), L"../Engine/data/dirt01.dds", L"../Engine/data/rock.dds");
+		result = m_Terrain->Initialize(m_Direct3D->GetDevice(), m_DungeonGenerator->GetDungeonData(), L"data/dirt01.dds", L"data/rock.dds");
 		if(!result)
 			return false;
 
